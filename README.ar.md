@@ -44,49 +44,4 @@
 
 **ملاحظة:** ملفات الإصدارات الحالية غير موقّعة بشهادة ناشر Windows (Authenticode)، لذلك قد يعرض Windows SmartScreen تحذير «ناشر غير معروف». نزّل التطبيق من [صفحة الإصدارات الرسمية](https://github.com/mediadesign853-cpu/quran-lite/releases/latest) فقط.
 
-## 🛠️ بناء التطبيق من المصدر
-
-هذا القسم مخصص للمطورين الذين يرغبون في بناء التطبيق من الشيفرة المصدرية. يتطلب ذلك **Node.js 22** وnpm.
-
-نفّذ الأوامر التالية في PowerShell من مجلد المشروع الرئيسي:
-
-</div>
-
-```powershell
-npm ci
-npm run check
-npm run dist:win
-```
-
-<div dir="rtl" align="right">
-
-- يتحقق `npm run check` من بيانات القرآن وأنواع TypeScript وقواعد ESLint وبناء تطبيق الويب.
-- ينشئ `npm run dist:win` نسختَي Windows x64، Setup وPortable، داخل مجلد `release/`.
-
-### نشر إصدار على GitHub
-
-يتم النشر تلقائياً عبر GitHub Actions. يبدأ سير العمل عند دفع Tag يبدأ بالحرف `v`، مثل `v1.0.1`. ثم يفحص المشروع، ويبني ملفات Windows، ويرفع ملفات التحديث إلى إصدار GitHub.
-
-تتضمن أدوات إدارة تحديث Portable الأوامر التالية:
-
-</div>
-
-```powershell
-npm run generate:portable-keys
-npm run verify:portable-key
-npm run create:portable-manifest
-```
-
-<div dir="rtl" align="right">
-
-**تنبيه للمطورين:** يُستخدم الأمر `generate:portable-keys` عند إعداد نظام المفاتيح لأول مرة فقط، ولا ينبغي إنشاء مفاتيح جديدة مع كل إصدار. يجب الحفاظ على سرية المفتاح الخاص وعدم رفعه إلى Git. تُحفظ التفاصيل الكاملة لإعداد Secrets وخطوات النشر في وثائق المطورين.
-
-## 📄 الترخيص ومصدر النص
-
-نص القرآن مأخوذ من [مشروع تنزيل](https://tanzil.net) ويُوزّع بموجب ترخيص **CC BY 3.0**. يرجى الالتزام بشروط الترخيص ونسب النص إلى مصدره عند استخدامه أو إعادة نشره.
-
----
-
-**Quran Reader Lite** — قراءة القرآن والبحث فيه، بسهولة ودون اتصال بالإنترنت.
-
 </div>
