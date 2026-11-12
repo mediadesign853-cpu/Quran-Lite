@@ -15974,9 +15974,22 @@ async function getVerifiedPortableManifest() {
   if (!envelope || typeof envelope !== "object" || typeof envelope.signedPayload !== "string" || typeof envelope.signature !== "string") {
     throw new Error("Portable update signature envelope is invalid.");
   }
+  const isCanonicalBase64Text = (value) =>
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length % 4 === 0 &&
+    /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value);
+  if (!isCanonicalBase64Text(envelope.signedPayload) || !isCanonicalBase64Text(envelope.signature)) {
+    throw new Error("Portable update signature encoding is invalid.");
+  }
   const payloadBytes = Buffer.from(envelope.signedPayload, "base64");
   const signature = Buffer.from(envelope.signature, "base64");
-  if (payloadBytes.length === 0 || payloadBytes.toString("base64") !== envelope.signedPayload || signature.length !== 64 || signature.toString("base64") !== envelope.signature) {
+  if (
+    payloadBytes.length === 0 ||
+    payloadBytes.toString("base64") !== envelope.signedPayload ||
+    signature.length !== 64 ||
+    signature.toString("base64") !== envelope.signature
+  ) {
     throw new Error("Portable update signature encoding is invalid.");
   }
   const publicKey = crypto.createPublicKey(fs.readFileSync(publicKeyPath, "utf8"));
@@ -16187,6 +16200,7 @@ function startNsisUpdates(getWindow) {
     if (percent === 100) notify("Quran Reader Lite", "\u062F\u0631\u06CC\u0627\u0641\u062A \u0628\u0647\u200C\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC \u06A9\u0627\u0645\u0644 \u0634\u062F\u061B \u0646\u0635\u0628 \u0622\u063A\u0627\u0632 \u0645\u06CC\u200C\u0634\u0648\u062F.");
   });
   autoUpdater.on("update-downloaded", () => {
+    downloadInProgress = false;
     if (!updateAccepted) return;
     setTimeout(() => autoUpdater.quitAndInstall(true, true), 400);
   });
@@ -16224,6 +16238,19 @@ function startPortableUpdates(getWindow) {
       const comparison = compareStableVersions(manifest.version, app.getVersion());
       if (comparison === null) throw new Error("Could not compare current and remote versions.");
       if (comparison <= 0 || manifest.version === declinedVersion) return;
+      try {
+        assertPortableDirectoryWritable(executablePath);
+      } catch (error) {
+        updaterLog("error", "Portable update directory is not writable.", {
+          executablePath,
+          message: error?.message || String(error)
+        });
+        try {
+          await showAcceptedUpdateError(getWindow, error);
+        } catch {
+        }
+        return;
+      }
       promptOpen = true;
       const accepted = await askToUpdate(getWindow, manifest.version);
       if (!accepted) {
@@ -16232,7 +16259,6 @@ function startPortableUpdates(getWindow) {
       }
       updateAccepted = true;
       updateInProgress = true;
-      assertPortableDirectoryWritable(executablePath);
       notify("Quran Reader Lite", `\u062F\u0631 \u062D\u0627\u0644 \u062F\u0631\u06CC\u0627\u0641\u062A \u0646\u0633\u062E\u0647\u0654 ${manifest.version}\u061B \u067E\u0633 \u0627\u0632 \u067E\u0627\u06CC\u0627\u0646\u060C \u0628\u0631\u0646\u0627\u0645\u0647 \u062E\u0648\u062F\u06A9\u0627\u0631 \u0631\u0627\u0647\u200C\u0627\u0646\u062F\u0627\u0632\u06CC \u0645\u062C\u062F\u062F \u0645\u06CC\u200C\u0634\u0648\u062F.`);
       downloadedPath = await downloadAndVerifyPortable(manifest);
       await launchPortableReplacement(executablePath, downloadedPath, manifest);
@@ -16258,9 +16284,9 @@ function startPortableUpdates(getWindow) {
         } catch {
         }
       }
+    } finally {
       updateAccepted = false;
       updateInProgress = false;
-    } finally {
       checkRunning = false;
       promptOpen = false;
     }
