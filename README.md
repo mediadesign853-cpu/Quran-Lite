@@ -4,7 +4,7 @@
 
 Quran Reader Lite is a Windows desktop application for reading and searching the Arabic Quran offline. It is built with **Electron, React, and TypeScript**. The Lite edition contains the Arabic Quran text; translations and tafsir are not included.
 
-Quran text source: [Tanzil Project](https://tanzil.net) — CC BY 3.0.
+Quran text source: [Tanzil](https://tanzil.net) — CC BY 3.0.
 
 ## Main Features
 
