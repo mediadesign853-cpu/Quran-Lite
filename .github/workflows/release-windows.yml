@@ -1,0 +1,63 @@
+name: Release Windows application
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify Portable update public key
+        run: node scripts/verify-portable-update-key.cjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run project checks
+        run: npm run check
+
+      - name: Build and publish NSIS and Portable artifacts
+        run: npm run dist:win -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create signed Portable update manifest
+        run: node scripts/create-portable-update-manifest.cjs
+        env:
+          PORTABLE_UPDATE_PRIVATE_KEY: ${{ secrets.PORTABLE_UPDATE_PRIVATE_KEY }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+
+      - name: Upload Portable update metadata
+        shell: pwsh
+        run: |
+          gh release upload "$env:GITHUB_REF_NAME" `
+            "release/latest-portable.json" `
+            --repo "mediadesign853-cpu/quran-lite" `
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish release after all update assets are uploaded
+        shell: pwsh
+        run: |
+          gh release edit "$env:GITHUB_REF_NAME" `
+            --draft=false `
+            --repo "mediadesign853-cpu/quran-lite"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

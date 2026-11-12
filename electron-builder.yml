@@ -1,0 +1,69 @@
+# Windows installer (NSIS): npm run dist:win -> release/Quran Reader Lite Setup <version>.exe
+appId: com.quranreader.lite
+productName: Quran Reader Lite
+copyright: Quran text © Tanzil Project (CC BY 3.0)
+
+directories:
+  output: release
+  buildResources: build
+
+# Keep the desktop shell and bundled update module alongside the built web app.
+files:
+  - electron/main.cjs
+  - electron/preload.cjs
+  - electron/auto-updater.bundle.cjs
+  - electron/portable-update-public.pem
+  - electron/dist/**/*
+  - "!**/node_modules/**"
+
+# Page images stay outside app.asar, in <install folder>/resources/pages.
+extraResources:
+  - from: electron/pages
+    to: pages
+    filter:
+      - "*.webp"
+      - boxes.json
+  - from: electron/integrations/insert-footnote.ps1
+    to: integrations/insert-footnote.ps1
+  - from: electron/integrations/insert-footnote.jsx
+    to: integrations/insert-footnote.jsx
+  - from: electron/portable-update-helper.ps1
+    to: portable-update-helper.ps1
+
+asar: true
+compression: normal
+electronLanguages: [en-US, ar, fa]
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: build/icon.ico
+  # Keep PE resources (icon/version metadata) but do not attempt Authenticode signing.
+  signExecutable: false
+  # This project currently has no Authenticode certificate. SHA-512 artifact checks
+  # and HTTPS transport remain enabled, but publisher-certificate verification is off.
+  verifyUpdateCodeSignature: false
+
+nsis:
+  artifactName: "${productName} Setup ${version}.${ext}"
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Quran Reader Lite
+  deleteAppDataOnUninstall: false
+
+portable:
+  artifactName: "${productName} Portable ${version}.${ext}"
+
+# Public feed: installed NSIS clients check this feed automatically; they do not
+# need a GitHub account or to open the GitHub website.
+publish:
+  provider: github
+  owner: mediadesign853-cpu
+  repo: quran-lite
+  releaseType: draft
