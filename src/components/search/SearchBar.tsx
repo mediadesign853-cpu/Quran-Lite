@@ -281,7 +281,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           placeholder={placeholder}
           aria-label={placeholder}
           autoComplete="off"
-          className="w-full pr-9 pl-9 py-2 text-sm bg-[var(--bg-card)] border border-[var(--border)] rounded-lg focus:outline-none focus:border-[var(--accent)] transition-smooth"
+          className="w-full pr-9 pl-9 py-2 text-sm bg-[var(--bg-card)] border border-[var(--border)] rounded-lg focus:outline-hidden focus:border-[var(--accent)] transition-smooth"
         />
         {query && !loadingIndex && (
           <button
@@ -353,7 +353,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           {/* Warning for a number / reference that does not exist */}
           {warning && (
             <div className="flex items-start gap-2 px-4 py-3 bg-amber-50 text-amber-800 text-sm border-b border-amber-200">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{warningText(warning, surahs, t)}</span>
             </div>
           )}
@@ -364,7 +364,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
               onClick={() => handleChange(suggestion)}
               className="flex items-center gap-2 px-4 py-3 text-sm text-right border-b border-[var(--border-light)] hover:bg-[var(--bg-secondary)] transition-smooth"
             >
-              <Lightbulb className="w-4 h-4 text-[var(--accent)]  flex-shrink-0" />
+              <Lightbulb className="w-4 h-4 text-[var(--accent)]  shrink-0" />
               <span className='font-arabic font-bold'>
                 {t ? 'آیا منظور شما' : 'هل تقصد: '}
                 <span className="font-quran font-black text-base text-[var(--accent)]">«{suggestion}»</span>
@@ -405,7 +405,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
             {filteredResults.map((result, resultIndex) => {
             const isActive = resultIndex === activeResultIndex;
             const activeClasses = isActive
-              ? 'bg-[var(--bg-secondary)] ring-1 ring-inset ring-[var(--accent)]/35'
+              ? 'bg-[var(--bg-secondary)] inset-ring-1 inset-ring-[var(--accent)]/35'
               : '';
             if (result.type === 'surah') {
               return (
@@ -418,7 +418,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
                   onClick={() => handleResultClick(result)}
                   className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-secondary)] transition-smooth text-right border-b border-[var(--border-light)] ${activeClasses}`}
                 >
-                  <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center shrink-0">
                     <BookOpen className="w-4 h-4 text-[var(--accent)]" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -426,7 +426,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
                       <span className="font-quran text-base text-[var(--text-primary)] truncate">
                         {renderHighlighted(result.surahName)}
                       </span>
-                      <span className="text-xs text-[var(--text-secondary)] flex-shrink-0 ml-2">{result.surahNumber}</span>
+                      <span className="text-xs text-[var(--text-secondary)] shrink-0 ml-2">{result.surahNumber}</span>
                     </div>
                     <div className="text-xs text-[var(--text-secondary)] truncate">
                       {t ? 'سوره' : 'سورة'} · {renderHighlighted(result.englishName)}
@@ -445,7 +445,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
                   onClick={() => handleResultClick(result)}
                   className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-[var(--bg-secondary)] transition-smooth text-right border-b border-[var(--border-light)] ${activeClasses}`}
                 >
-                  <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center shrink-0 mt-0.5">
                     <FileText className="w-4 h-4 text-[var(--accent)]" />
                   </div>
                   <div className="flex-1 min-w-0">

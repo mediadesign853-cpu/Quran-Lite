@@ -323,7 +323,7 @@ export default function App() {
 
       {copyStatus && (
         <div
-          className={`fixed  bottom-[86px] right-6 z-[110] w-fit max-w-[calc(100vw-2rem)] max-h-[40vh] overflow-y-auto whitespace-pre-wrap break-words rounded-xl border bg-[var(--bg-card)] px-4 py-3 text-sm leading-6 shadow-xl
+          className={`fixed  bottom-[86px] right-6 z-[110] w-fit max-w-[calc(100vw-2rem)] max-h-[40vh] overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm leading-6 shadow-xl
             ${copyStatus.success ? 'border-[var(--accent)]' : 'border-amber-400'}`}
           dir="auto"
           role={copyStatus.success ? 'status' : 'alert'}

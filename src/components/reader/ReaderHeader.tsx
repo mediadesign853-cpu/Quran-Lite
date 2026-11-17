@@ -46,7 +46,7 @@ export default function ReaderHeader({
   const pageNumber = surahData[0]?.ayahs?.[0]?.page;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 px-2 py-2 backdrop-blur-sm sm:px-4 sm:py-3">
+    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 px-2 py-2 backdrop-blur-xs sm:px-4 sm:py-3">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] items-center gap-x-2 gap-y-2 min-[842px]:grid-cols-[minmax(0,1fr)_minmax(0,min(34rem,48vw))_minmax(0,1fr)] min-[842px]:grid-rows-1 min-[842px]:gap-x-3 min-[842px]:gap-y-0">
         <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 sm:gap-2 min-[842px]:justify-self-start">
           <button

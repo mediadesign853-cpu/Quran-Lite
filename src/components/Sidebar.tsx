@@ -111,7 +111,7 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={language === 'fa' ? 'جستجوی سوره...' : 'بحث عن سورة...'}
-              className="w-full pr-9 pl-3 py-2 text-sm bg-[var(--bg-card)] border border-[var(--border)] rounded-lg focus:outline-none focus:border-[var(--accent)] transition-smooth"
+              className="w-full pr-9 pl-3 py-2 text-sm bg-[var(--bg-card)] border border-[var(--border)] rounded-lg focus:outline-hidden focus:border-[var(--accent)] transition-smooth"
             />
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
                 }`}
               >
                 <div
-                  className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-semibold ${
+                  className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-semibold ${
                     isActive
                       ? 'bg-white/20 text-white'
                       : 'bg-[var(--border-light)] text-[var(--text-secondary)] group-hover:bg-[var(--border)]'
@@ -154,7 +154,7 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
                       {surah.englishName} · {surah.revelationType === 'Meccan' ? (language === 'fa' ? 'مکی' : 'مكية') : (language === 'fa' ? 'مدنی' : 'مدنية')}
                     </span>
                     {viewCount > 0 && (
-                      <span className="flex items-center gap-0.5 flex-shrink-0 mr-2">
+                      <span className="flex items-center gap-0.5 shrink-0 mr-2">
                         <Eye className="w-3 h-3" />
                         {viewCount}
                       </span>

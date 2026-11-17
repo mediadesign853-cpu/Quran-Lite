@@ -177,7 +177,7 @@ export default function BookmarksPanel({ isOpen, onClose, language, onNavigate }
                     key={bm.key}
                     className="group flex items-start gap-3 px-3 py-3 rounded-lg mb-1 hover:bg-[var(--bg-secondary)] transition-smooth"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center shrink-0 mt-0.5">
                       <BookOpen className="w-4 h-4 text-[var(--accent)]" />
                     </div>
                     <button
@@ -201,7 +201,7 @@ export default function BookmarksPanel({ isOpen, onClose, language, onNavigate }
                     <button
                       type="button"
                       onClick={() => handleRemove(bm.surahNumber, bm.ayahNumber)}
-                      className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-500/10 transition-smooth opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                      className="shrink-0 p-1.5 rounded-lg hover:bg-red-500/10 transition-smooth opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                       aria-label={t ? `حذف نشان آیهٔ ${bm.ayahNumber}` : `حذف علامة الآية ${bm.ayahNumber}`}
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />

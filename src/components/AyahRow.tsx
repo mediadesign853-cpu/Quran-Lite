@@ -128,7 +128,7 @@ function AyahRow({
         </div>
 
         {/* Action buttons */}
-        <div className="flex flex-shrink-0 flex-col gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <div className="flex shrink-0 flex-col gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
           <button
             onClick={(event) => { event.stopPropagation(); handleCopy(); }}
             className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
