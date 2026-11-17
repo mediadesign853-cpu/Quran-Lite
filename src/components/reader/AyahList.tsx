@@ -1,4 +1,4 @@
-import { memo, useMemo, type MutableRefObject } from 'react';
+import { memo, useMemo, type RefObject } from 'react';
 import AyahRow from '@/components/AyahRow';
 import type { PageTarget } from '@/lib/pageImages';
 import { getBookmarks, useBookmarksVersion } from '@/lib/bookmarks';
@@ -22,8 +22,7 @@ interface AyahRowItemProps {
   bookmarked: boolean;
   viewCount: number;
   onToggleSelect: (ayahNumber: number) => void;
-  ayahRefs: MutableRefObject<Map<number, HTMLDivElement>>;
-}
+  ayahRefs: RefObject<Map<number, HTMLDivElement>>;}
 
 /** Registers mounted ayah elements for scrolling and direct navigation. */
 const AyahRowItem = memo(function AyahRowItem({
@@ -76,7 +75,7 @@ interface AyahListProps {
   searchQuery: string;
   pagesOn: boolean;
   onShowPage: (target: PageTarget) => void;
-  ayahRefs: MutableRefObject<Map<number, HTMLDivElement>>;
+  ayahRefs: RefObject<Map<number, HTMLDivElement>>;
   selectedAyahs: Set<number>;
   onToggleAyahSelection: (ayahNumber: number) => void;
 }
