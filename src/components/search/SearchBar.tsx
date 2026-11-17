@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useDeferredValue, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useMemo, useDeferredValue, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Search, X, Loader2, BookOpen, FileText, History, Trash2, AlertTriangle, Lightbulb } from 'lucide-react';
 import type { SurahMeta, Language } from '@/types/quran';
 import {
@@ -51,9 +51,15 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
   const [indexAttempt, setIndexAttempt] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'surahs' | 'ayahs'>('all');
+  const [activeResultState, setActiveResultState] = useState<{
+    query: string;
+    tab: 'all' | 'surahs' | 'ayahs';
+    index: number;
+  }>({ query: '', tab: 'all', index: -1 });
   const history = useHistory();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsListRef = useRef<HTMLDivElement>(null);
   const deferredQuery = useDeferredValue(query);
 
   // The index is one small file: load it right away so the first search is instant too.
@@ -75,9 +81,15 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Typing stays responsive: the results list is rendered from a deferred copy of the text.
-  const { results, capped, warning, suggestion } = useMemo(() => {
-    const none = { results: [] as SearchResult[], capped: false, warning: undefined, suggestion: null };
+  // Typing stays responsive: normal search results use a deferred copy of the text.
+  // Expensive typo correction is handled separately below with a short debounce.
+  const { results, capped, warning, shouldSuggest } = useMemo(() => {
+    const none = {
+      results: [] as SearchResult[],
+      capped: false,
+      warning: undefined as ReferenceWarning | undefined,
+      shouldSuggest: false,
+    };
     if (!deferredQuery.trim()) return none;
 
     // "2:250", "205", "بقره 255": go straight to the surah / ayah (or say that it does not exist)
@@ -102,10 +114,44 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     const surahHits = searchSurahNames(surahs, deferredQuery);
     if (!index) return { ...none, results: surahHits as SearchResult[] };
     const ayahHits = searchAyahs(index, surahs, deferredQuery);
-    // the phrase itself is not in the Quran and little else was found: maybe a typo or a wrong space ("احذ", "أ فحسب")
-    const suggestion = ayahHits.exact === 0 && ayahHits.results.length <= MAX_RESULTS_FOR_SUGGESTION ? suggestQuery(index, surahs, deferredQuery) : null;
-    return { ...none, results: [...surahHits, ...ayahHits.results] as SearchResult[], capped: ayahHits.capped, suggestion };
+    return {
+      ...none,
+      results: [...surahHits, ...ayahHits.results] as SearchResult[],
+      capped: ayahHits.capped,
+      shouldSuggest: ayahHits.exact === 0 && ayahHits.results.length <= MAX_RESULTS_FOR_SUGGESTION,
+    };
   }, [surahs, currentSurah, index, deferredQuery]);
+
+  const [suggestionState, setSuggestionState] = useState<{ query: string; value: string | null }>({
+    query: '',
+    value: null,
+  });
+
+  useEffect(() => {
+    const suggestionQuery = deferredQuery.trim();
+    // If React is still deferring the latest keystroke, do not spend time
+    // correcting the older query that is temporarily shown in the results.
+    // The render below hides stale suggestions, so this effect does not need
+    // to synchronously clear state (which would cause an extra render).
+    if (query !== deferredQuery || !suggestionQuery || !index || !shouldSuggest) return;
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      const value = suggestQuery(index, suggestionQuery);
+      if (active) setSuggestionState({ query: deferredQuery, value });
+    }, 300);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [query, deferredQuery, index, shouldSuggest]);
+
+  // Never show a correction that belongs to an old or ineligible query.
+  const suggestion = query === deferredQuery && shouldSuggest &&
+    suggestionState.query === deferredQuery
+    ? suggestionState.value
+    : null;
   const loadingIndex = !index && !indexError && query.trim() !== '';
   const retryIndex = () => {
     setIndex(null);
@@ -115,12 +161,14 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
 
   const handleChange = (value: string) => {
     setQuery(value);
+    setActiveResultIndex(-1);
     setShowResults(true);
   };
 
   const handleClear = () => {
     setQuery('');
     setShowResults(false);
+    setActiveResultIndex(-1);
     inputRef.current?.focus();
   };
 
@@ -128,6 +176,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     onNavigateSurah(result.surahNumber, result.type === 'ayah' ? result.ayahNumberInSurah : undefined, query);
     setShowResults(false);
     setQuery('');
+    setActiveResultIndex(-1);
   };
 
   const handleHistoryClick = (surah: number, ayah: number, historyQuery: string) => {
@@ -143,8 +192,71 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     activeTab === 'ayahs' ? ayahResults :
     results;
 
+  // The active result belongs to a specific query and tab. Deriving its validity
+  // avoids resetting state from an effect when either input changes.
+  const activeResultIndex =
+    activeResultState.query === deferredQuery &&
+    activeResultState.tab === activeTab &&
+    activeResultState.index >= 0 &&
+    activeResultState.index < filteredResults.length
+      ? activeResultState.index
+      : -1;
+
+  const setActiveResultIndex = (
+    nextIndex: number | ((currentIndex: number) => number)
+  ) => {
+    const index = typeof nextIndex === 'function'
+      ? nextIndex(activeResultIndex)
+      : nextIndex;
+    setActiveResultState({ query: deferredQuery, tab: activeTab, index });
+  };
+
+  const handleTabChange = (tab: 'all' | 'surahs' | 'ayahs') => {
+    setActiveTab(tab);
+    setActiveResultState({ query: deferredQuery, tab, index: -1 });
+  };
+
+  useEffect(() => {
+    if (!showResults || !query.trim() || activeResultIndex < 0) return;
+    const activeItem = resultsListRef.current?.querySelector<HTMLElement>(
+      `[data-search-result-index="${activeResultIndex}"]`
+    );
+    activeItem?.scrollIntoView({ block: 'nearest' });
+  }, [activeResultIndex, filteredResults.length, query, showResults]);
+
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      if (showResults) {
+        event.preventDefault();
+        setShowResults(false);
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      if (filteredResults.length === 0) return;
+      event.preventDefault();
+      const wasOpen = showResults;
+      setShowResults(true);
+      setActiveResultIndex((current) => {
+        if (!wasOpen || current < 0) return event.key === 'ArrowDown' ? 0 : filteredResults.length - 1;
+        const direction = event.key === 'ArrowDown' ? 1 : -1;
+        return (current + direction + filteredResults.length) % filteredResults.length;
+      });
+      return;
+    }
+
+    if (event.key === 'Enter' && showResults && query.trim()) {
+      const activeResult = filteredResults[activeResultIndex >= 0 ? activeResultIndex : 0];
+      if (activeResult) {
+        event.preventDefault();
+        handleResultClick(activeResult);
+      }
+    }
+  };
+
   const t = language === 'fa';
-  const placeholder = t ? 'جستجو ...' : 'البحث ...';
+  const placeholder = t ? 'جستجو ...' : 'ابحث ...';
 
   function renderHighlighted(text: string) {
     const segments = getHighlightedSegments(text, deferredQuery);
@@ -164,6 +276,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           type="text"
           value={query}
           onChange={(e) => handleChange(e.target.value)}
+          onKeyDown={handleInputKeyDown}
           onFocus={() => { if (query.trim() || history.length > 0) setShowResults(true); }}
           placeholder={placeholder}
           aria-label={placeholder}
@@ -230,7 +343,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
         <div className="absolute top-full mt-2 w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl z-50 max-h-[60vh] flex flex-col animate-scale-in overflow-hidden">
           {indexError && (
             <div className="flex items-center justify-between gap-3 border-b border-[var(--border-light)] px-4 py-3 text-sm text-red-700" role="alert">
-              <span>{t ? 'فهرست جستجوی آیات بارگذاری نشد.' : 'تعذّر تحميل فهرس البحث عن الآيات.'}</span>
+              <span>{t ? 'فهرست جستجوی آیات بارگذاری نشد' : 'تعذّر تحميل فهرس البحث عن الآيات'}</span>
               <button onClick={retryIndex} className="shrink-0 underline">
                 {t ? 'تلاش دوباره' : 'إعادة المحاولة'}
               </button>
@@ -262,19 +375,19 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
 
           {/* Tabs */}
           <div className="flex items-center justify-center gap-6 border-b border-[var(--border-light)] px-2 pt-2">
-            <TabButton active={activeTab === 'all'} onClick={() => setActiveTab('all')}>
+            <TabButton active={activeTab === 'all'} onClick={() => handleTabChange('all')}>
               {t ? 'همه' : 'الكل'} ({results.length}{capped ? '+' : ''})
             </TabButton>
-            <TabButton active={activeTab === 'surahs'} onClick={() => setActiveTab('surahs')}>
+            <TabButton active={activeTab === 'surahs'} onClick={() => handleTabChange('surahs')}>
               {t ? 'سوره‌ها' : 'السور'} ({surahResults.length})
             </TabButton>
-            <TabButton active={activeTab === 'ayahs'} onClick={() => setActiveTab('ayahs')}>
+            <TabButton active={activeTab === 'ayahs'} onClick={() => handleTabChange('ayahs')}>
               {t ? 'آیات' : 'الآيات'} ({ayahResults.length}{capped ? '+' : ''})
             </TabButton>
           </div>
 
           {/* Results list */}
-          <div className="overflow-y-auto flex-1">
+          <div ref={resultsListRef} className="overflow-y-auto flex-1">
             {filteredResults.length === 0 && !loadingIndex && !warning && !suggestion && (
             <div className="text-center py-8 px-4">
               <p className="text-sm text-[var(--text-secondary)]">
@@ -289,13 +402,21 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
             </div>
             )}
 
-            {filteredResults.map((result) => {
+            {filteredResults.map((result, resultIndex) => {
+            const isActive = resultIndex === activeResultIndex;
+            const activeClasses = isActive
+              ? 'bg-[var(--bg-secondary)] ring-1 ring-inset ring-[var(--accent)]/35'
+              : '';
             if (result.type === 'surah') {
               return (
                 <button
                   key={`s-${result.surahNumber}`}
+                  id={`search-result-${resultIndex}`}
+                  data-search-result-index={resultIndex}
+                  aria-current={isActive ? 'true' : undefined}
+                  onMouseEnter={() => setActiveResultIndex(resultIndex)}
                   onClick={() => handleResultClick(result)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-secondary)] transition-smooth text-right border-b border-[var(--border-light)]"
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-secondary)] transition-smooth text-right border-b border-[var(--border-light)] ${activeClasses}`}
                 >
                   <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center flex-shrink-0">
                     <BookOpen className="w-4 h-4 text-[var(--accent)]" />
@@ -317,8 +438,12 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
               return (
                 <button
                   key={`a-${result.surahNumber}:${result.ayahNumberInSurah}`}
+                  id={`search-result-${resultIndex}`}
+                  data-search-result-index={resultIndex}
+                  aria-current={isActive ? 'true' : undefined}
+                  onMouseEnter={() => setActiveResultIndex(resultIndex)}
                   onClick={() => handleResultClick(result)}
-                  className="w-full flex items-start gap-3 px-4 py-3 hover:bg-[var(--bg-secondary)] transition-smooth text-right border-b border-[var(--border-light)]"
+                  className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-[var(--bg-secondary)] transition-smooth text-right border-b border-[var(--border-light)] ${activeClasses}`}
                 >
                   <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <FileText className="w-4 h-4 text-[var(--accent)]" />

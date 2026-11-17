@@ -22,6 +22,8 @@ export default [
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      '**/.venv/**',
+      '.venv/**',
       'dist',
       'release/**',
       'coverage/**',

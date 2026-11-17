@@ -13,13 +13,14 @@
     "electron:dev": "npm run build && npm run prepare:electron && electron .",
     "dist:win": "npm run build && npm run prepare:electron && npm run verify:portable-key && electron-builder --config electron-builder.yml --win",
     "verify:data": "node scripts/verify-data.mjs",
-    "check": "npm run verify:data && npm run test:quran-text && npm run test:electron-security && npm run typecheck && npm run lint && npm run build",
+    "check": "npm run verify:data && npm run test:quran-text && npm run test:quran-reference && npm run test:electron-security && npm run typecheck && npm run lint && npm run build",
     "generate:portable-keys": "node scripts/generate-portable-update-keys.cjs",
     "verify:portable-key": "node scripts/verify-portable-update-key.cjs",
     "create:portable-manifest": "node scripts/create-portable-update-manifest.cjs",
-    "test:quran-text": "python -m unittest discover -s tools -p \"test_*.py\"",
+    "test:quran-text": "python -m unittest discover -s tools -p \"test_quran_text.py\"",
     "test:electron-security": "node --test scripts/test-electron-security.cjs",
-    "refresh:dependencies": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/refresh-dependencies.ps1"
+    "refresh:dependencies": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/refresh-dependencies.ps1",
+    "test:quran-reference": "python -m unittest discover -s tools -p \"test_quran_reference.py\""
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

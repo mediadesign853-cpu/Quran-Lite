@@ -6,7 +6,7 @@ import {
   Settings,
   Sun,
 } from 'lucide-react';
-import SearchBar from '@/components/SearchBar';
+import SearchBar from '@/components/search/SearchBar';
 import type { PageTarget } from '@/lib/pageImages';
 import type { AppSettings, SurahEdition, SurahMeta } from '@/types/quran';
 

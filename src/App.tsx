@@ -22,6 +22,7 @@ import { useServiceWorkerUpdate } from '@/app/hooks/useServiceWorkerUpdate';
 export default function App() {
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [currentSurah, setCurrentSurah] = useState<number | null>(null);
+  const [loadedSurahNumber, setLoadedSurahNumber] = useState<number | null>(null);
   const [surahData, setSurahData] = useState<SurahEdition[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +90,8 @@ export default function App() {
       .then((data) => {
         if (!active) return;
         setSurahData(data);
+        setLoadedSurahNumber(currentSurah);
+        setError(null);
         setLoading(false);
         if (pendingTargetRef.current !== null) {
           const ayah = pendingTargetRef.current;
@@ -112,15 +115,14 @@ export default function App() {
   const handleSelectSurah = useCallback((n: number) => {
     pendingTargetRef.current = null;
     if (n !== currentSurah) {
-      setLoading(true);
+      setLoading(n !== loadedSurahNumber);
       setError(null);
-      setSurahData(null);
       setTargetAyah(null);
       setCurrentSurah(n);
     }
     setSidebarOpen(false);
     setSearchQuery('');
-  }, [currentSurah]);
+  }, [currentSurah, loadedSurahNumber]);
 
   const handleNavigateSurah = useCallback((surahNumber: number, ayahNumber?: number, query?: string, record = true) => {
     if (query) setSearchQuery(query);
@@ -128,23 +130,33 @@ export default function App() {
       recordAyahSearch(surahNumber, ayahNumber);
       addHistory(surahNumber, ayahNumber, query);
     }
-    if (surahNumber !== currentSurah) {
+    if (surahNumber !== loadedSurahNumber) {
+      // A request for this destination may already be in flight. Update its
+      // pending target instead of trying to scroll the still-visible old surah.
       setLoading(true);
       setError(null);
-      setSurahData(null);
       setTargetAyah(null);
       pendingTargetRef.current = ayahNumber ?? null;
-      setCurrentSurah(surahNumber);
-    } else if (ayahNumber !== undefined) {
-      setTargetAyah(null);
-      window.setTimeout(() => setTargetAyah(ayahNumber), 50);
+      if (surahNumber !== currentSurah) setCurrentSurah(surahNumber);
+    } else {
+      // Navigating back to the already displayed surah cancels any pending
+      // destination and can use its retained data immediately.
+      pendingTargetRef.current = null;
+      if (currentSurah !== surahNumber) {
+        setCurrentSurah(surahNumber);
+        setLoading(false);
+        setError(null);
+      }
+      if (ayahNumber !== undefined) {
+        setTargetAyah(null);
+        window.setTimeout(() => setTargetAyah(ayahNumber), 50);
+      }
     }
-  }, [currentSurah]);
+  }, [currentSurah, loadedSurahNumber]);
 
   const handleRetrySurah = useCallback(() => {
     setLoading(true);
     setError(null);
-    setSurahData(null);
     setSurahRetry((value) => value + 1);
   }, []);
 
@@ -178,31 +190,48 @@ export default function App() {
     saveSettings(next);
   }, [settings]);
 
+  // Keep the metadata paired with the data currently on screen while a different
+  // surah is loading. The old reader remains usable until the new data is ready.
+  const displayedSurahNumber = loadedSurahNumber ?? currentSurah;
+  const surahMeta = displayedSurahNumber
+    ? surahs.find((surah) => surah.number === displayedSurahNumber) ?? null
+    : null;
+
   const handlePrev = useCallback(() => {
+    const base = currentSurah ?? displayedSurahNumber;
     pendingTargetRef.current = null;
-    if (currentSurah && currentSurah > 1) {
+    if (base && base > 1) {
       setLoading(true);
       setError(null);
-      setSurahData(null);
       setTargetAyah(null);
-      setCurrentSurah(currentSurah - 1);
+      setCurrentSurah(base - 1);
     }
     setSearchQuery('');
-  }, [currentSurah]);
+  }, [currentSurah, displayedSurahNumber]);
 
   const handleNext = useCallback(() => {
+    const base = currentSurah ?? displayedSurahNumber;
     pendingTargetRef.current = null;
-    if (currentSurah && currentSurah < 114) {
+    if (base && base < 114) {
       setLoading(true);
       setError(null);
-      setSurahData(null);
       setTargetAyah(null);
-      setCurrentSurah(currentSurah + 1);
+      setCurrentSurah(base + 1);
     }
     setSearchQuery('');
-  }, [currentSurah]);
+  }, [currentSurah, displayedSurahNumber]);
 
-  const surahMeta = currentSurah ? surahs.find((surah) => surah.number === currentSurah) ?? null : null;
+
+  // Preload the adjacent surahs after the current one has rendered. fetchSurah
+  // deduplicates requests and stores the resulting promises in its existing cache.
+  useEffect(() => {
+    if (currentSurah === null || loadedSurahNumber !== currentSurah) return;
+    const timer = window.setTimeout(() => {
+      if (currentSurah > 1) void fetchSurah(currentSurah - 1).catch(() => undefined);
+      if (currentSurah < 114) void fetchSurah(currentSurah + 1).catch(() => undefined);
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [currentSurah, loadedSurahNumber]);
 
   if (listLoading) {
     return (
@@ -253,7 +282,9 @@ export default function App() {
         onClose={() => setSidebarOpen(false)}
       />
 
+      {/* Reset reader-local selection state when the newly loaded surah replaces the previous one. */}
       <Reader
+        key={loadedSurahNumber ?? 'reader'}
         surahMeta={surahMeta}
         surahData={surahData}
         loading={loading}
@@ -271,8 +302,8 @@ export default function App() {
         onShowPage={setViewPage}
         onToggleTheme={handleToggleTheme}
         onNavigateSurah={handleNavigateSurah}
-        hasPrev={currentSurah !== null && currentSurah > 1}
-        hasNext={currentSurah !== null && currentSurah < 114}
+        hasPrev={displayedSurahNumber !== null && displayedSurahNumber > 1}
+        hasNext={displayedSurahNumber !== null && displayedSurahNumber < 114}
       />
 
       <SettingsPanel settings={settings} onChange={handleSettingsChange} isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />

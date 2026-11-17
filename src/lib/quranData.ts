@@ -187,6 +187,19 @@ function compactText(original: string): { text: string; toOrig: number[] } {
   return { text, toOrig };
 }
 
+/** Same normalization as compactText, without building the source-position map.
+ * Search-index construction only needs the normalized string; the position map
+ * is reserved for result highlighting, where it is actually consumed.
+ */
+function compactSearchText(original: string): string {
+  let text = '';
+  for (let i = 0; i < original.length; i++) {
+    const normalized = normChar(original[i]);
+    if (normalized) text += normalized;
+  }
+  return text;
+}
+
 // ── Search highlight ─────────────────────────────────────────────────
 
 interface HighlightSegment {
@@ -299,7 +312,7 @@ export interface SearchIndex {
 }
 
 function buildIndex(texts: string[][]): SearchIndex {
-  const compact = texts.map((surah) => surah.map((t) => compactText(t).text));
+  const compact = texts.map((surah) => surah.map(compactSearchText));
   const starts = compact.map((surah) => {
     let offset = 0;
     return surah.map((t) => {
@@ -331,6 +344,17 @@ export function loadSearchIndex(): Promise<SearchIndex> {
 }
 
 const MAX_AYAH_RESULTS = 200;
+
+/**
+ * Checks only whether a normalized phrase occurs anywhere in the Quran index.
+ * This avoids constructing result objects, snippets, and loose-word matches
+ * when the typo-correction engine only needs a yes/no answer.
+ */
+export function hasExactAyahMatch(index: SearchIndex, query: string): boolean {
+  const phrase = normalizeSearch(query).replace(/ /g, '');
+  if (!phrase) return false;
+  return index.joined.some((surahText) => surahText.includes(phrase));
+}
 
 /** Index of the ayah (inside its surah) that contains the character at `position` of `joined`. */
 function ayahAt(starts: number[], position: number): number {
