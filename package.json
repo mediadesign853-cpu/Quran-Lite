@@ -60,13 +60,16 @@
     "typescript-eslint": "^8.73.0",
     "vite": "^8.3.8"
   },
-  "overrides": {
-    "app-builder-lib": {
-      "@electron/universal": "3.0.6",
-      "minimatch": "^11.0.9",
+ "overrides": {
+  "app-builder-lib@26.18.1": {
+    "@electron/universal": "3.0.6",
+    "minimatch": "^11.0.9",
+    "@electron/asar@3.4.1": {
+      "minimatch": "3.1.5",
       "glob": {
-        "minimatch": "^3.1.2"
+        "minimatch": "3.1.5"
       }
     }
   }
+}
 }
