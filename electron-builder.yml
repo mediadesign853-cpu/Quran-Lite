@@ -67,5 +67,5 @@ portable:
 publish:
   provider: github
   owner: mediadesign853-cpu
-  repo: quran-lite
-  releaseType: draft
+  repo: Quran-Lite
+  releaseType: release

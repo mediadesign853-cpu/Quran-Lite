@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+﻿import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, ImageOff, Highlighter } from 'lucide-react';
 import type { Language, SurahMeta } from '@/types/quran';
 import {
@@ -94,20 +94,21 @@ export default function PageViewer({ target, surahs, language, onClose, onChange
   if (page === null) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-3" onClick={handleClose}>
+    <div className="fixed inset-0 z-60 bg-black/60 flex items-center justify-center p-3" onClick={handleClose}>
       <div
-        className="bg-[var(--bg-card)] text-[var(--text-primary)] rounded-2xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col overflow-hidden"
+        className="bg-(--bg-card) text-(--text-primary) rounded-2xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--border)]">
+        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-(--border)">
           <div className="flex items-center gap-1">
-            <button onClick={() => goTo(page - 1)} disabled={page <= 1} className="p-2 rounded-lg hover:bg-[var(--accent)]/10 disabled:opacity-30" aria-label="prev">
+            <button onClick={() => goTo(page - 1)} disabled={page <= 1} className="p-2 rounded-lg hover:bg-(--accent)/10 disabled:opacity-30" aria-label="prev">
               <ChevronRight className="w-4 h-4" />
             </button>
-            <span className="text-sm font-medium px-1 min-w-[110px] text-center">
+            <span className="text-sm font-medium px-1 min-w-27.5 text-center">
               {fa ? `صفحهٔ ${page} از ${TOTAL_PAGES}` : `صفحة ${page} من ${TOTAL_PAGES}`}
             </span>
-            <button onClick={() => goTo(page + 1)} disabled={page >= TOTAL_PAGES} className="p-2 rounded-lg hover:bg-[var(--accent)]/10 disabled:opacity-30" aria-label="next">
+            <button onClick={() => goTo(page + 1)} disabled={page >= TOTAL_PAGES} 
+            className="p-2 rounded-lg hover:bg-(--accent)/10 disabled:opacity-30" aria-label="next">
               <ChevronLeft className="w-4 h-4" />
             </button>
           </div>
@@ -115,37 +116,39 @@ export default function PageViewer({ target, surahs, language, onClose, onChange
             {rects.length > 0 && !lit && (
               <button
                 onClick={() => setReplay((n) => n + 1)}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs hover:bg-[var(--accent)]/10"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs hover:bg-(--accent)/10"
               >
                 <Highlighter className="w-4 h-4" />
                 {fa ? 'نمایش آیه' : 'إظهار الآية'}
               </button>
             )}
-            <button onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))} className="p-2 rounded-lg hover:bg-[var(--accent)]/10" aria-label="zoom out">
+            <button onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
+             className="p-2 rounded-lg hover:bg-(--accent)/10" aria-label="zoom out">
               <ZoomOut className="w-4 h-4" />
             </button>
             <span className="text-xs w-10 text-center">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom((z) => Math.min(3, z + 0.25))} className="p-2 rounded-lg hover:bg-[var(--accent)]/10" aria-label="zoom in">
+            <button onClick={() => setZoom((z) => Math.min(3, z + 0.25))} 
+            className="p-2 rounded-lg hover:bg-(--accent)/10" aria-label="zoom in">
               <ZoomIn className="w-4 h-4" />
             </button>
-            <button onClick={handleClose} className="p-2 rounded-lg hover:bg-[var(--accent)]/10" aria-label="close">
+            <button onClick={handleClose} className="p-2 rounded-lg hover:bg-(--accent)/10" aria-label="close">
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto bg-[#efeadc] min-h-[240px]">
+        <div className="flex-1 overflow-auto bg-[#efeadc] min-h-60">
           {!available || failed ? (
             <div className="p-8 text-center text-sm text-[#333] space-y-2">
               <ImageOff className="w-8 h-8 mx-auto opacity-50" />
               <p>
                 {!available
                   ? fa
-                    ? 'تصاویر صفحات در این نسخه موجود نیست.'
-                    : 'صور الصفحات غير متوفرة في هذه النسخة.'
+                    ? 'تصاویر صفحات در این نسخه موجود نیست'
+                    : 'صور الصفحات غير متوفرة في هذه النسخة'
                   : fa
-                    ? 'تصویر این صفحه پیدا نشد.'
-                    : 'لم يتم العثور على صورة هذه الصفحة.'}
+                    ? 'تصویر این صفحه پیدا نشد'
+                    : 'لم يتم العثور على صورة هذه الصفحة'}
               </p>
             </div>
           ) : (

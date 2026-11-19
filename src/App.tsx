@@ -5,6 +5,7 @@ import Reader from '@/components/Reader';
 import SettingsPanel from '@/components/SettingsPanel';
 import BookmarksPanel from '@/components/BookmarksPanel';
 import PageViewer from '@/components/PageViewer';
+import UpdatePage from '@/components/UpdatePage';
 import type { PageTarget } from '@/lib/pageImages';
 import type { SurahMeta, SurahEdition, AppSettings } from '@/types/quran';
 import {
@@ -40,7 +41,7 @@ export default function App() {
   const copyStatus = useCopyStatus();
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
   const pendingTargetRef = useRef<number | null>(null);
-
+  const [dismissedUpdate, setDismissedUpdate] = useState(false);
   useEffect(() => {
     purgeLegacyStorage();
   }, []);
@@ -235,10 +236,10 @@ export default function App() {
 
   if (listLoading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+      <div className="min-h-screen bg-(--bg-primary) flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-[var(--accent)]" />
+          <div className="w-16 h-16 rounded-2xl bg-(--accent)/10 flex items-center justify-center">
+            <BookOpen className="w-8 h-8 text-(--accent)" />
           </div>
           <div className="flex items-center gap-2" aria-label="Loading">
             <span className="loading-dot" />
@@ -252,17 +253,17 @@ export default function App() {
 
   if (listError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-6" role="alert">
+      <div className="min-h-screen flex items-center justify-center bg-(--bg-primary) p-6" role="alert">
         <div className="max-w-md text-center space-y-3">
-          <BookOpen className="w-10 h-10 text-[var(--accent)] mx-auto" />
-          <p className="text-[var(--text-primary)]">
+          <BookOpen className="w-10 h-10 text-(--accent) mx-auto" />
+          <p className="text-(--text-primary)">
             {settings.language === 'fa' ? 'فهرست سوره‌ها بارگذاری نشد.' : 'تعذّر تحميل قائمة السور.'}
           </p>
           <button onClick={() => {
             setListLoading(true);
             setListError(false);
             setListRetry((value) => value + 1);
-          }} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] text-white">
+          }} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-(--accent) text-white">
             <RefreshCw className="w-4 h-4" />
             {settings.language === 'fa' ? 'تلاش دوباره' : 'إعادة المحاولة'}
           </button>
@@ -272,7 +273,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-[var(--bg-primary)]">
+    <div className="h-screen flex overflow-hidden bg-(--bg-primary)">
       <Sidebar
         surahs={surahs}
         currentSurah={currentSurah}
@@ -323,8 +324,8 @@ export default function App() {
 
       {copyStatus && (
         <div
-          className={`fixed  bottom-[86px] right-6 z-[110] w-fit max-w-[calc(100vw-2rem)] max-h-[40vh] overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm leading-6 shadow-xl
-            ${copyStatus.success ? 'border-[var(--accent)]' : 'border-amber-400'}`}
+          className={`fixed  bottom-21.5 right-6 z-110 w-fit max-w-[calc(100vw-2rem)] max-h-[40vh] overflow-y-auto whitespace-pre-wrap wrap-break-word rounded-xl border border-(--border) bg-(--bg-card) px-4 py-3 text-sm leading-6 shadow-xl
+            ${copyStatus.success ? 'border-(--accent)' : 'border-amber-400'}`}
           dir="auto"
           role={copyStatus.success ? 'status' : 'alert'}
           aria-live={copyStatus.success ? 'polite' : 'assertive'}
@@ -333,15 +334,15 @@ export default function App() {
         </div>
       )}
 
-      {updateAvailable && (
-        <div className="fixed bottom-4 left-4 z-[100] flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 shadow-xl" role="status">
-          <span className="text-sm text-[var(--text-primary)]">
-            {settings.language === 'fa' ? 'نسخهٔ تازه آماده است.' : 'يتوفر تحديث جديد.'}
-          </span>
-          <button onClick={() => void applyUpdate()} className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm text-white">
-            {settings.language === 'fa' ? 'به‌روزرسانی' : 'تحديث'}
-          </button>
-        </div>
+      {updateAvailable && !dismissedUpdate && (
+        <UpdatePage
+          version=""
+          onUpdate={() => {
+            void applyUpdate();
+            setDismissedUpdate(true);
+          }}
+          onDismiss={() => setDismissedUpdate(true)}
+        />
       )}
     </div>
   );

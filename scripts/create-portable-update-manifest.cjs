@@ -13,7 +13,7 @@ async function main() {
   const tag = process.env.GITHUB_REF_NAME || `v${version}`;
   const privateKeyPem = process.env.PORTABLE_UPDATE_PRIVATE_KEY;
   const owner = 'mediadesign853-cpu';
-  const repo = 'quran-lite';
+  const repo = 'Quran-Lite';
 
   if (!privateKeyPem || !privateKeyPem.includes('BEGIN PRIVATE KEY')) {
     throw new Error('PORTABLE_UPDATE_PRIVATE_KEY environment variable is missing or invalid.');

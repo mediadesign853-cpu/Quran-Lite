@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useDeferredValue, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+﻿import { useState, useRef, useEffect, useMemo, useDeferredValue, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Search, X, Loader2, BookOpen, FileText, History, Trash2, AlertTriangle, Lightbulb } from 'lucide-react';
 import type { SurahMeta, Language } from '@/types/quran';
 import {
@@ -270,7 +270,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
   return (
     <div ref={containerRef} className="relative w-full max-w-xl mx-auto">
       <div className="relative w-full min-w-0 mx-auto">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] pointer-events-none" />
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-secondary) pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
@@ -281,32 +281,32 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           placeholder={placeholder}
           aria-label={placeholder}
           autoComplete="off"
-          className="w-full pr-9 pl-9 py-2 text-sm bg-[var(--bg-card)] border border-[var(--border)] rounded-lg focus:outline-hidden focus:border-[var(--accent)] transition-smooth"
+          className="w-full pr-9 pl-9 py-2 text-sm bg-(--bg-card) border border-(--border) rounded-lg focus:outline-hidden focus:border-(--accent) transition-smooth"
         />
         {query && !loadingIndex && (
           <button
             onClick={handleClear}
-            className="absolute left-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-[var(--border-light)] transition-smooth"
+            className="absolute left-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-(--border-light) transition-smooth"
           >
-            <X className="w-4 h-4 text-[var(--text-secondary)]" />
+            <X className="w-4 h-4 text-(--text-secondary)" />
           </button>
         )}
         {loadingIndex && (
-          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--accent)] animate-spin" />
+          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--accent) animate-spin" />
         )}
       </div>
 
       {showResults && !query.trim() && history.length > 0 && (
-        <div className="absolute top-full mt-2 w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl z-50 max-h-[60vh] flex flex-col animate-scale-in overflow-hidden">
+        <div className="absolute top-full mt-2 w-full bg-(--bg-card) border border-(--border) rounded-xl shadow-2xl z-50 max-h-[60vh] flex flex-col animate-scale-in overflow-hidden">
           {/* Search history: ayahs opened from the search results */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border-light)]">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-(--border-light)">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-(--text-secondary)">
               <History className="w-3.5 h-3.5" />
               {t ? 'تاریخچهٔ جستجو' : 'سجل البحث'}
             </span>
             <button
               onClick={clearHistory}
-              className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-red-600 transition-smooth"
+              className="flex items-center gap-1 text-xs text-(--text-secondary) hover:text-red-600 transition-smooth"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {t ? 'حذف همه' : 'حذف الكل'}
@@ -314,22 +314,22 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           </div>
           <div className="overflow-y-auto flex-1">
             {history.map((entry) => (
-              <div key={`${entry.surah}:${entry.ayah}`} className="flex items-stretch border-b border-[var(--border-light)] hover:bg-[var(--bg-secondary)] transition-smooth">
+              <div key={`${entry.surah}:${entry.ayah}`} className="flex items-stretch border-b border-(--border-light) hover:bg-(--bg-secondary) transition-smooth">
                 <button
                   onClick={() => handleHistoryClick(entry.surah, entry.ayah, entry.query)}
                   className="flex-1 min-w-0 px-4 py-2.5 text-right"
                 >
-                  <div className="text-xs text-[var(--text-secondary)] mb-0.5">
-                    {surahs[entry.surah - 1]?.name} · {entry.surah}:{entry.ayah}
+                  <div className="text-xs text-(--text-secondary) mb-0.5">
+                    {surahs[entry.surah - 1]?.name} Â· {entry.surah}:{entry.ayah}
                   </div>
-                  <p className="font-quran text-sm text-[var(--text-primary)] truncate" dir="rtl">
+                  <p className="font-quran text-sm text-(--text-primary) truncate" dir="rtl">
                     {index?.texts[entry.surah - 1]?.[entry.ayah - 1] ?? entry.query}
                   </p>
                 </button>
                 <button
                   onClick={() => removeHistory(entry.surah, entry.ayah)}
                   aria-label={t ? 'حذف از تاریخچه' : 'حذف من السجل'}
-                  className="px-3 text-[var(--text-secondary)] hover:text-red-600 transition-smooth"
+                  className="px-3 text-(--text-secondary) hover:text-red-600 transition-smooth"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -340,9 +340,9 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
       )}
 
       {showResults && deferredQuery.trim() && (
-        <div className="absolute top-full mt-2 w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-2xl z-50 max-h-[60vh] flex flex-col animate-scale-in overflow-hidden">
+        <div className="absolute top-full mt-2 w-full bg-(--bg-card) border border-(--border) rounded-xl shadow-2xl z-50 max-h-[60vh] flex flex-col animate-scale-in overflow-hidden">
           {indexError && (
-            <div className="flex items-center justify-between gap-3 border-b border-[var(--border-light)] px-4 py-3 text-sm text-red-700" role="alert">
+            <div className="flex items-center justify-between gap-3 border-b border-(--border-light) px-4 py-3 text-sm text-red-700" role="alert">
               <span>{t ? 'فهرست جستجوی آیات بارگذاری نشد' : 'تعذّر تحميل فهرس البحث عن الآيات'}</span>
               <button onClick={retryIndex} className="shrink-0 underline">
                 {t ? 'تلاش دوباره' : 'إعادة المحاولة'}
@@ -362,24 +362,24 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           {suggestion && (
             <button
               onClick={() => handleChange(suggestion)}
-              className="flex items-center gap-2 px-4 py-3 text-sm text-right border-b border-[var(--border-light)] hover:bg-[var(--bg-secondary)] transition-smooth"
+              className="flex items-center gap-2 px-4 py-3 text-sm text-right border-b border-(--border-light) hover:bg-(--bg-secondary) transition-smooth"
             >
-              <Lightbulb className="w-4 h-4 text-[var(--accent)]  shrink-0" />
+              <Lightbulb className="w-4 h-4 text-(--accent)  shrink-0" />
               <span className='font-arabic font-bold'>
                 {t ? 'آیا منظور شما' : 'هل تقصد: '}
-                <span className="font-quran font-black text-base text-[var(--accent)]">«{suggestion}»</span>
+                <span className="font-quran font-black text-base text-(--accent)">«{suggestion}»</span>
                 {t ? ' بود؟' : '؟'}
               </span>
             </button>
           )}
 
           {/* Tabs */}
-          <div className="flex items-center justify-center gap-6 border-b border-[var(--border-light)] px-2 pt-2">
+          <div className="flex items-center justify-center gap-6 border-b border-(--border-light) px-2 pt-2">
             <TabButton active={activeTab === 'all'} onClick={() => handleTabChange('all')}>
               {t ? 'همه' : 'الكل'} ({results.length}{capped ? '+' : ''})
             </TabButton>
             <TabButton active={activeTab === 'surahs'} onClick={() => handleTabChange('surahs')}>
-              {t ? 'سوره‌ها' : 'السور'} ({surahResults.length})
+              {t ? 'Ø³ÙˆØ±Ù‡â€ŒÙ‡Ø§' : 'Ø§Ù„Ø³ÙˆØ±'} ({surahResults.length})
             </TabButton>
             <TabButton active={activeTab === 'ayahs'} onClick={() => handleTabChange('ayahs')}>
               {t ? 'آیات' : 'الآيات'} ({ayahResults.length}{capped ? '+' : ''})
@@ -390,7 +390,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           <div ref={resultsListRef} className="overflow-y-auto flex-1">
             {filteredResults.length === 0 && !loadingIndex && !warning && !suggestion && (
             <div className="text-center py-8 px-4">
-              <p className="text-sm text-[var(--text-secondary)]">
+              <p className="text-sm text-(--text-secondary)">
                 {t ? 'نتیجه‌ای یافت نشد' : 'لا توجد نتائج'}
               </p>
             </div>
@@ -398,14 +398,14 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
 
             {filteredResults.length === 0 && loadingIndex && (
             <div className="text-center py-8 px-4">
-              <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin mx-auto mb-2" />
+              <Loader2 className="w-5 h-5 text-(--accent) animate-spin mx-auto mb-2" />
             </div>
             )}
 
             {filteredResults.map((result, resultIndex) => {
             const isActive = resultIndex === activeResultIndex;
             const activeClasses = isActive
-              ? 'bg-[var(--bg-secondary)] inset-ring-1 inset-ring-[var(--accent)]/35'
+              ? 'bg-(--bg-secondary) inset-ring-1 inset-ring-(--accent)/35'
               : '';
             if (result.type === 'surah') {
               return (
@@ -416,19 +416,19 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
                   aria-current={isActive ? 'true' : undefined}
                   onMouseEnter={() => setActiveResultIndex(resultIndex)}
                   onClick={() => handleResultClick(result)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-secondary)] transition-smooth text-right border-b border-[var(--border-light)] ${activeClasses}`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-(--bg-secondary) transition-smooth text-right border-b border-(--border-light) ${activeClasses}`}
                 >
-                  <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center shrink-0">
-                    <BookOpen className="w-4 h-4 text-[var(--accent)]" />
+                  <div className="w-9 h-9 rounded-lg bg-(--accent)/10 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-4 h-4 text-(--accent)" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-quran text-base text-[var(--text-primary)] truncate">
+                      <span className="font-quran text-base text-(--text-primary) truncate">
                         {renderHighlighted(result.surahName)}
                       </span>
-                      <span className="text-xs text-[var(--text-secondary)] shrink-0 ml-2">{result.surahNumber}</span>
+                      <span className="text-xs text-(--text-secondary) shrink-0 ml-2">{result.surahNumber}</span>
                     </div>
-                    <div className="text-xs text-[var(--text-secondary)] truncate">
+                    <div className="text-xs text-(--text-secondary) truncate">
                       {t ? 'سوره' : 'سورة'} · {renderHighlighted(result.englishName)}
                     </div>
                   </div>
@@ -443,18 +443,18 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
                   aria-current={isActive ? 'true' : undefined}
                   onMouseEnter={() => setActiveResultIndex(resultIndex)}
                   onClick={() => handleResultClick(result)}
-                  className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-[var(--bg-secondary)] transition-smooth text-right border-b border-[var(--border-light)] ${activeClasses}`}
+                  className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-(--bg-secondary) transition-smooth text-right border-b border-(--border-light) ${activeClasses}`}
                 >
-                  <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <FileText className="w-4 h-4 text-[var(--accent)]" />
+                  <div className="w-9 h-9 rounded-lg bg--(--accent)/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <FileText className="w-4 h-4 text-(--accent)" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-[var(--text-secondary)]">
+                      <span className="text-xs text-(--text-secondary)">
                         {result.surahName} · {result.surahNumber}:{result.ayahNumberInSurah}{result.lastAyah ? `–${result.lastAyah}` : ''}
                       </span>
                     </div>
-                    <p className="font-quran text-sm text-[var(--text-primary)] leading-relaxed line-clamp-2" dir="rtl">
+                    <p className="font-quran text-sm text-(--text-primary) leading-relaxed line-clamp-2" dir="rtl">
                       {renderHighlighted(result.textSnippet)}
                     </p>
                   </div>
@@ -475,11 +475,12 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className={`px-3 py-1.5 text-xs font-medium rounded-t-lg transition-smooth ${
         active
-          ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]'
-          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+          ? 'text-(--accent) border-b-2 border-(--accent)'
+          : 'text-(--text-secondary) hover:text-(--text-primary)'
       }`}
     >
       {children}
     </button>
   );
 }
+

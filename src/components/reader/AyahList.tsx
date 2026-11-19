@@ -1,4 +1,4 @@
-import { memo, useMemo, type RefObject } from 'react';
+﻿import { memo, useMemo, type RefObject } from 'react';
 import AyahRow from '@/components/AyahRow';
 import type { PageTarget } from '@/lib/pageImages';
 import { getBookmarks, useBookmarksVersion } from '@/lib/bookmarks';
@@ -121,7 +121,7 @@ export default function AyahList({
       {surahData[0]?.bismillah && (
         <div className="px-3 py-5 text-center sm:px-4 sm:py-8">
           <p
-            className="inline-block font-quran text-[var(--accent)]"
+            className="inline-block font-quran text-(--accent)"
             style={{ fontSize: `${settings.fontSize + 4}px` }}
             dir="rtl"
           >

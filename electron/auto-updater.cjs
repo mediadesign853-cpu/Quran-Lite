@@ -20,7 +20,7 @@ const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
 const MAX_PORTABLE_SIZE = 1024 * 1024 * 1024;
 
 const GITHUB_OWNER = 'mediadesign853-cpu';
-const GITHUB_REPO = 'quran-lite';
+const GITHUB_REPO = 'Quran-Lite';
 const GITHUB_BASE = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
 const PORTABLE_MANIFEST_URL = `${GITHUB_BASE}/releases/latest/download/latest-portable.json`;
 const EXPECTED_APP_ID = 'com.quranreader.lite';

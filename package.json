@@ -3,13 +3,13 @@
   "private": true,
   "version": "1.0.3",
   "type": "module",
-  "description": "Quran Reader Lite: Arabic Quran text, offline reading and search for Windows desktop.",
+  "description": "Offline Quran Reader",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mediadesign853-cpu/quran-lite.git"
+    "url": "https://github.com/mediadesign853-cpu/Quran-Lite.git"
   },
   "main": "electron/main.cjs",
-  "author": "Quran Reader",
+  "author": "Quran",
   "engines": {
     "node": ">=22.13.0",
     "npm": ">=10.0.0"
@@ -59,17 +59,5 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.73.0",
     "vite": "^8.3.8"
-  },
-  "overrides": {
-    "app-builder-lib@26.18.1": {
-      "@electron/universal": "3.0.6",
-      "minimatch": "^11.0.9",
-      "@electron/asar@3.4.1": {
-        "minimatch": "3.1.5",
-        "glob": {
-          "minimatch": "3.1.5"
-        }
-      }
-    }
   }
 }

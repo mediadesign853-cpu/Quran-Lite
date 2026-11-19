@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react';
+﻿import { memo, useState, useCallback } from 'react';
 import { Copy, Check, Bookmark, BookmarkCheck, Eye, FileImage } from 'lucide-react';
 import type { SurahEdition, AppSettings } from '@/types/quran';
 import { getAyahText, getHighlightedSegments } from '@/lib/quranData';
@@ -92,16 +92,16 @@ function AyahRow({
       className={`group cursor-pointer rounded-xl transition-colors duration-200 ${isTarget
         ? 'bg-amber-100/60 dark:bg-amber-900/20 ring-2 ring-amber-400/50'
         : selected
-          ? 'bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/20'
+          ? 'bg-(--accent)/8 ring-1 ring-(--accent)/20'
           : ''
         }`}
     >
-      <div className="flex items-start gap-3 rounded-xl px-4 py-4 transition-colors duration-200 hover:bg-[var(--bg-card)] sm:px-6">
+      <div className="flex items-start gap-3 rounded-xl px-4 py-4 transition-colors duration-200 hover:bg-(--bg-card) sm:px-6">
         {/* Content */}
         <div className="min-w-0 flex-1">
           {/* Arabic text with verse number at the end */}
           <p
-            className="quran-text mb-2 font-quran text-[var(--text-primary)]"
+            className="quran-text mb-2 font-quran text-(--text-primary)"
             style={{ fontSize: `${settings.fontSize}px` }}
             dir="rtl"
           >
@@ -121,8 +121,8 @@ function AyahRow({
           {/* Search count badge: shown only for ayahs that were searched */}
           {viewCount > 0 && (
             <div className="mt-1.5 flex select-none items-center gap-1">
-              <Eye className="h-3 w-3 text-[var(--text-secondary)]" />
-              <span className="text-xs text-[var(--text-secondary)]">{viewCount}</span>
+              <Eye className="h-3 w-3 text-(--text-secondary)" />
+              <span className="text-xs text-(--text-secondary)">{viewCount}</span>
             </div>
           )}
         </div>
@@ -131,37 +131,37 @@ function AyahRow({
         <div className="flex shrink-0 flex-col gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
           <button
             onClick={(event) => { event.stopPropagation(); handleCopy(); }}
-            className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+            className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-(--accent)]/10 focus-visible:outline-2 focus-visible:outline-(--accent)"
             aria-label={settings.language === 'fa' ? 'کپی آیه' : 'نسخ الآية'}
             data-tooltip={settings.language === 'fa' ? 'کپی' : 'نسخ'}
           >
             {copied ? (
-              <Check className="h-4 w-4 text-[var(--accent)]" />
+              <Check className="h-4 w-4 text-(--accent)" />
             ) : (
-              <Copy className="h-4 w-4 text-[var(--text-secondary)]" />
+              <Copy className="h-4 w-4 text-(--text-secondary)" />
             )}
           </button>
           <button
             onClick={(event) => { event.stopPropagation(); handleToggleBookmark(); }}
-            className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+            className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-(--accent)/10  focus-visible:outline-2 focus-visible:outline-(--accent)"
             aria-label={settings.language === 'fa' ? 'نشان‌گذاری آیه' : 'وضع علامة على الآية'}
             aria-pressed={bookmarked}
             data-tooltip={settings.language === 'fa' ? 'نشان' : 'علامة'}
           >
             {bookmarked ? (
-              <BookmarkCheck className="h-4 w-4 text-[var(--accent)]" />
+              <BookmarkCheck className="h-4 w-4 text-(--accent)" />
             ) : (
-              <Bookmark className="h-4 w-4 text-[var(--text-secondary)]" />
+              <Bookmark className="h-4 w-4 text-(--text-secondary)" />
             )}
           </button>
           {onShowPage && pageNumber ? (
             <button
               onClick={(event) => { event.stopPropagation(); onShowPage({ page: pageNumber, surah: surahNumber, ayah: ayahNumber }); }}
-              className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+              className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-(--accent)/10  focus-visible:outline-2 focus-visible:outline-(--accent)"
               aria-label={settings.language === 'fa' ? `نمایش صفحهٔ ${pageNumber}` : `عرض الصفحة ${pageNumber}`}
               data-tooltip={settings.language === 'fa' ? `صفحهٔ مصحف (${pageNumber})` : `صفحة المصحف (${pageNumber})`}
             >
-              <FileImage className="h-4 w-4 text-[var(--text-secondary)]" />
+              <FileImage className="h-4 w-4 text-(--text-secondary)" />
             </button>
           ) : null}
         </div>
@@ -171,3 +171,4 @@ function AyahRow({
 }
 
 export default memo(AyahRow);
+

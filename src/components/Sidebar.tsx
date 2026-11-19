@@ -79,16 +79,16 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
         aria-hidden={!isOpen}
         aria-label={language === 'fa' ? 'فهرست سوره‌ها' : 'قائمة السور'}
         tabIndex={-1}
-        className={`fixed top-0 right-0 h-full w-80 bg-[var(--bg-secondary)]
-          border-l border-[var(--border)] z-40 flex flex-col transition-transform duration-300 ease-out ${
+        className={`fixed top-0 right-0 h-full w-80 bg-(--bg-secondary)
+          border-l border-(--border) z-40 flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
         }`}
       >
-        <div className="p-4 border-b border-[var(--border)]">
+        <div className="p-4 border-b border-(--border)">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-[var(--accent)]" />
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+              <BookOpen className="w-5 h-5 text-(--accent)" />
+              <h2 className="text-sm font-semibold text-(--text-primary)">
                 {language === 'fa' ? 'فهرست سوره‌ها' : 'السور'}
               </h2>
             </div>
@@ -97,21 +97,21 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
               ref={closeButtonRef}
               onClick={onClose}
               aria-label={language === 'fa' ? 'بستن فهرست سوره‌ها' : 'إغلاق قائمة السور'}
-              className="p-1 rounded hover:bg-[var(--border-light)] transition-smooth"
+              className="p-1 rounded hover:bg-(--border-light) transition-smooth"
             >
-              <X className="w-5 h-5 text-[var(--text-secondary)]" />
+              <X className="w-5 h-5 text-(--text-secondary)" />
             </button>
             
           </div>
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-secondary)" />
             <input
               ref={searchInputRef}
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={language === 'fa' ? 'جستجوی سوره...' : 'بحث عن سورة...'}
-              className="w-full pr-9 pl-3 py-2 text-sm bg-[var(--bg-card)] border border-[var(--border)] rounded-lg focus:outline-hidden focus:border-[var(--accent)] transition-smooth"
+              className="w-full pr-9 pl-3 py-2 text-sm bg-(--bg-card) border border-(--border) rounded-lg focus:outline-hidden focus:border-(--accent) transition-smooth"
             />
           </div>
         </div>
@@ -127,15 +127,15 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
                 onClick={() => onSelectSurah(surah.number)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-right transition-smooth group ${
                   isActive
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'hover:bg-[var(--border-light)] text-[var(--text-primary)]'
+                    ? 'bg-(--accent)] text-white'
+                    : 'hover:bg-(--border-light)] text-(--text-primary)'
                 }`}
               >
                 <div
                   className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-semibold ${
                     isActive
                       ? 'bg-white/20 text-white'
-                      : 'bg-[var(--border-light)] text-[var(--text-secondary)] group-hover:bg-[var(--border)]'
+                      : 'bg-(--border-light) text-(--text-secondary) group-hover:bg-(--border)'
                   }`}
                 >
                   {surah.number}
@@ -145,11 +145,11 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
                     <span className="font-quran text-base leading-tight truncate">
                       {surah.name}
                     </span>
-                    <span className={`text-xs ${isActive ? 'text-white/70' : 'text-[var(--text-secondary)]'}`}>
+                    <span className={`text-xs ${isActive ? 'text-white/70' : 'text-(--text-secondary)'}`}>
                       {surah.numberOfAyahs}
                     </span>
                   </div>
-                  <div className={`flex items-center justify-between text-xs ${isActive ? 'text-white/60' : 'text-[var(--text-secondary)]'}`}>
+                  <div className={`flex items-center justify-between text-xs ${isActive ? 'text-white/60' : 'text-(--text-secondary)'}`}>
                     <span className="truncate">
                       {surah.englishName} · {surah.revelationType === 'Meccan' ? (language === 'fa' ? 'مکی' : 'مكية') : (language === 'fa' ? 'مدنی' : 'مدنية')}
                     </span>
@@ -165,7 +165,7 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
             );
           })}
           {filtered.length === 0 && (
-            <div className="text-center py-8 text-sm text-[var(--text-secondary)]">
+            <div className="text-center py-8 text-sm text-(--text-secondary)">
               {language === 'fa' ? 'سوره‌ای یافت نشد' : 'لا توجد نتائج'}
             </div>
           )}

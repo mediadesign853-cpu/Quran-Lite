@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+﻿import { useEffect, useState, type RefObject } from 'react';
 import { Copy } from 'lucide-react';
 import type { AppSettings } from '@/types/quran';
 import { copyAyahPayload, selectionCopyPayload } from '@/lib/copyText';
@@ -105,14 +105,14 @@ export default function SelectionCopyToolbar({ rootRef, settings, surahName }: S
 
   return (
     <div
-      className="fixed z-[70] -translate-x-1/2 -translate-y-full"
+      className="fixed z-70 -translate-x-1/2 -translate-y-full"
       style={{ top: selection.top, left: selection.left }}
       onMouseDown={(event) => event.preventDefault()}
     >
       <button
         type="button"
         onClick={handleCopy}
-        className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)] shadow-xl transition-smooth hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+        className="flex items-center gap-2 rounded-full border border-(--border) bg-(--bg-card) px-3 py-2 text-xs font-semibold text-(--text-primary) shadow-xl transition-smooth hover:border-(--accent) hover:text-(--accent)  focus-visible:outline-2 focus-visible:outline-(--accent)"
         aria-label={settings.language === 'fa' ? 'کپی آیات انتخاب‌شده' : 'نسخ الآيات المحددة'}
       >
         <Copy className="h-3.5 w-3.5" />

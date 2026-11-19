@@ -359,11 +359,11 @@ export default function Reader({
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-[var(--accent)]" />
+          <div className="w-16 h-16 rounded-2xl bg-(--accent)/10 flex items-center justify-center">
+            <BookOpen className="w-8 h-8 text-(--accent)" />
           </div>
           <div className="flex items-center gap-2">
-            <Ellipsis className=" text-[var(--accent)] animate-pulse" />
+            <Ellipsis className=" text-(--accent) animate-pulse" />
           </div>
         </div>
       </div>
@@ -390,11 +390,11 @@ export default function Reader({
       {loading && surahData && (
        <div className="absolute inset-0 z-10 flex-1 flex items-center justify-center">
        <div className="flex flex-col items-center gap-4">
-         <div className="w-16 h-16 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
-           <BookOpen className="w-8 h-8 text-[var(--accent)]" />
+         <div className="w-16 h-16 rounded-2xl bg-(--accent)/10 flex items-center justify-center">
+           <BookOpen className="w-8 h-8 text-(--accent)" />
          </div>
          <div className="flex items-center gap-2">
-           <Ellipsis className="w-8 h-8 text-[var(--accent)] animate-pulse" />
+           <Ellipsis className="w-8 h-8 text-(--accent) animate-pulse" />
          </div>
        </div>
      </div>
@@ -443,7 +443,7 @@ export default function Reader({
             type="button"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => void handleCopySelectedAyahs()}
-            className="inline-flex items-center mb-7 gap-2 rounded-full bg-[var(--accent)] px-4  py-2.5 text-sm font-medium text-white shadow-lg transition-smooth hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="inline-flex items-center mb-7 gap-2 rounded-full bg-(--accent) px-4  py-2.5 text-sm font-medium text-white shadow-lg transition-smooth hover:brightness-110  focus-visible:outline-offset-2 focus-visible:outline-(--accent)"
           >
             <Copy className="h-4 w-4" />
             {settings.language === 'fa'
