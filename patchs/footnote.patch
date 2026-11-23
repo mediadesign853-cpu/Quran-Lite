@@ -1,0 +1,546 @@
+--- a/electron/integrations/insert-footnote.jsx
++++ b/electron/integrations/insert-footnote.jsx
+@@ -1,9 +1,10 @@
+ /* Quran Reader - InDesign footnote bridge.
+  * ExtendScript ES3-compatible: designed for InDesign CC 2018 (13.x) and later.
+- * The outer COM DoScript call owns the undo transaction; do not nest app.doScript here.
++ * The script is loaded by insert-footnote.ps1 and receives its JSON payload below.
+  */
++var quranPayload = __QURAN_PAYLOAD_JSON__;
++
+ (function () {
+-    var payload = __QURAN_PAYLOAD_JSON__;
+     function quranHasType(object, expected) {
+         try {
+             if (object && object.constructor && object.constructor.name === expected) return true;
+@@ -17,7 +18,7 @@
+     function quranFindFootnote(object) {
+         var current = object;
+         var depth;
+-        for (depth = 0; depth < 16 && current; depth += 1) {
++        for (depth = 0; depth < 20 && current; depth += 1) {
+             try {
+                 if (quranHasType(current, 'Footnote') && current.isValid) {
+                     return current;
+@@ -34,9 +35,27 @@
+         return null;
+     }
+ 
+-    try {
+-        if (!payload || !payload.text || !payload.reference) {
+-            return 'QURAN_ERROR|INSERT_FAILED';
++    function quranIsInsertionPoint(object) {
++        return quranHasType(object, 'InsertionPoint');
++    }
++
++    function quranIsTextRange(object) {
++        return quranHasType(object, 'Text') ||
++            quranHasType(object, 'TextStyleRange') ||
++            quranHasType(object, 'Word') ||
++            quranHasType(object, 'Character') ||
++            quranHasType(object, 'Line') ||
++            quranHasType(object, 'Paragraph') ||
++            quranHasType(object, 'TextColumn');
++    }
++
++    function quranIsEditableTextTarget(object) {
++        return quranIsInsertionPoint(object) || quranIsTextRange(object);
++    }
++
++    function quranRunInsert() {
++        if (!quranPayload || !quranPayload.text || !quranPayload.reference) {
++            return 'QURAN_ERROR|INVALID_PAYLOAD';
+         }
+         if (!app.documents || app.documents.length < 1) {
+             return 'QURAN_ERROR|NO_DOCUMENT';
+@@ -51,38 +70,52 @@
+         }
+ 
+         var target = app.selection[0];
+-        var story = null;
+-        var startIndex = -1;
++        if (!quranIsEditableTextTarget(target)) {
++            return 'QURAN_ERROR|TEXT_REQUIRED';
++        }
++
++        var insertText = String(quranPayload.text);
++        var referenceText = String(quranPayload.reference);
+         var footnoteContext = quranFindFootnote(target);
+ 
+-        /* Recover a caret left in a previous footnote, using its main-story marker. */
++        /*
++         * A selection inside an existing InDesign footnote must stay in that footnote.
++         * A nested footnote is not supported by InDesign, so put the address in ordinary
++         * text immediately after the ayah instead of creating a new main-story footnote.
++         */
+         if (footnoteContext) {
+-            var oldMarker = footnoteContext.storyOffset;
+-            if (!oldMarker || !oldMarker.isValid || !oldMarker.parentStory) {
+-                return 'QURAN_ERROR|FOOTNOTE_POSITION';
+-            }
+-            story = oldMarker.parentStory;
+-            startIndex = Number(oldMarker.index) + 1;
+-            target = story.insertionPoints.item(startIndex);
+-        } else {
+-            var isInsertionPoint = quranHasType(target, 'InsertionPoint');
+-            var isTextRange = quranHasType(target, 'Text') ||
+-                quranHasType(target, 'TextStyleRange') ||
+-                quranHasType(target, 'Word') ||
+-                quranHasType(target, 'Character') ||
+-                quranHasType(target, 'Line') ||
+-                quranHasType(target, 'Paragraph') ||
+-                quranHasType(target, 'TextColumn');
+-            if (isInsertionPoint) {
+-                story = target.parentStory;
+-                startIndex = Number(target.index);
+-            } else if (isTextRange) {
+-                story = target.parentStory;
+-                if (target.insertionPoints && target.insertionPoints.length > 0) {
+-                    startIndex = Number(target.insertionPoints.item(0).index);
+-                }
+-            } else {
+-                return 'QURAN_ERROR|TEXT_REQUIRED';
++            var oldFootnoteContents = '';
++            try {
++                oldFootnoteContents = String(target.contents);
++            } catch (readError) {}
++
++            try {
++                target.contents = insertText + ' ' + referenceText;
++            } catch (writeError) {
++                try { target.contents = oldFootnoteContents; } catch (restoreError) {}
++                return 'QURAN_ERROR|FOOTNOTE_WRITE_FAILED';
++            }
++
++            /* Keep the insertion point in the existing footnote for the next operation. */
++            try {
++                var footnoteEnd = footnoteContext.insertionPoints.item(-1);
++                if (footnoteEnd && footnoteEnd.isValid) app.select(footnoteEnd);
++            } catch (caretError) {
++                /* The inserted text is already safe; caret restoration is non-critical. */
++            }
++
++            return 'QURAN_OK_EXISTING_FOOTNOTE';
++        }
++
++        var story = null;
++        var startIndex = -1;
++        if (quranIsInsertionPoint(target)) {
++            story = target.parentStory;
++            startIndex = Number(target.index);
++        } else if (quranIsTextRange(target)) {
++            story = target.parentStory;
++            if (target.insertionPoints && target.insertionPoints.length > 0) {
++                startIndex = Number(target.insertionPoints.item(0).index);
+             }
+         }
+ 
+@@ -91,31 +124,49 @@
+         }
+ 
+         var storyId = Number(story.id);
+-        var insertText = String(payload.text);
+-        var referenceText = String(payload.reference);
+-
+-        /* Replace a text selection, or insert at the active insertion point. */
+-        target.contents = insertText;
++        var originalContents = '';
++        try {
++            originalContents = String(target.contents);
++        } catch (contentsError) {}
+ 
+-        /* Re-resolve the story after mutation; old InDesign specifiers can become stale. */
+-        story = doc.stories.itemByID(storyId);
+-        if (!story || !story.isValid) {
+-            return 'QURAN_ERROR|STORY_INVALID';
+-        }
++        var footnote = null;
++        try {
++            /* Replace a text selection, or insert at the active insertion point. */
++            target.contents = insertText;
+ 
+-        var endIndex = startIndex + insertText.length;
+-        var endPoint = story.insertionPoints.item(endIndex);
+-        if (!endPoint || !endPoint.isValid) {
+-            return 'QURAN_ERROR|STORY_INVALID';
+-        }
++            /* Re-resolve the story after mutation; old InDesign specifiers can become stale. */
++            story = doc.stories.itemByID(storyId);
++            if (!story || !story.isValid) throw new Error('STORY_INVALID');
++
++            var endIndex = startIndex + insertText.length;
++            var endPoint = story.insertionPoints.item(endIndex);
++            if (!endPoint || !endPoint.isValid) throw new Error('STORY_INVALID');
++
++            footnote = endPoint.footnotes.add();
++            if (!footnote || !footnote.isValid) throw new Error('INSERT_FAILED');
++
++            footnote.insertionPoints.item(-1).contents = referenceText;
++        } catch (insertError) {
++            /* Roll back the text and any partially-created footnote before reporting failure. */
++            try {
++                if (footnote && footnote.isValid) footnote.remove();
++            } catch (removeError) {}
++            try {
++                story = doc.stories.itemByID(storyId);
++                if (story && story.isValid) {
++                    var lastInsertedIndex = startIndex + insertText.length - 1;
++                    if (lastInsertedIndex >= startIndex) {
++                        story.characters.itemByRange(startIndex, lastInsertedIndex).contents = originalContents;
++                    }
++                }
++            } catch (rollbackError) {}
+ 
+-        var footnote = endPoint.footnotes.add();
+-        if (!footnote || !footnote.isValid) {
++            if (insertError && insertError.message === 'STORY_INVALID') {
++                return 'QURAN_ERROR|STORY_INVALID';
++            }
+             return 'QURAN_ERROR|INSERT_FAILED';
+         }
+ 
+-        footnote.insertionPoints.item(-1).contents = referenceText;
+-
+         /* Restore the caret to the main story after the marker for repeated insertions. */
+         try {
+             var marker = footnote.storyOffset;
+@@ -129,12 +180,22 @@
+                     if (nextIndex >= 0) app.select(story.insertionPoints.item(nextIndex));
+                 }
+             }
+-        } catch (restoreError) {
+-            /* The footnote already exists. A caret-restore failure must not cause fallback paste. */
++        } catch (restoreCaretError) {
++            /* The footnote already exists; a caret-restore failure must not trigger fallback. */
+         }
+ 
+-        return 'QURAN_OK';
+-    } catch (error) {
++        return 'QURAN_OK_NATIVE_FOOTNOTE';
++    }
++
++    try {
++        return app.doScript(
++            quranRunInsert,
++            ScriptLanguage.JAVASCRIPT,
++            undefined,
++            UndoModes.ENTIRE_SCRIPT,
++            'Insert Quran footnote'
++        );
++    } catch (scriptError) {
+         return 'QURAN_ERROR|INSERT_FAILED';
+     }
+-})()
+\ No newline at end of file
++})();
+--- a/electron/integrations/insert-footnote.ps1
++++ b/electron/integrations/insert-footnote.ps1
+@@ -14,8 +14,10 @@
+ [Console]::OutputEncoding = $script:QuranUtf8
+ $OutputEncoding = $script:QuranUtf8
+ 
+-function Write-Result([bool]$Ok, [string]$Message) {
+-  $result = @{ ok = $Ok; message = $Message } | ConvertTo-Json -Compress
++function Write-Result([bool]$Ok, [string]$Message, [string]$Code = '') {
++  $result = @{ ok = $Ok; message = $Message }
++  if (-not [string]::IsNullOrWhiteSpace($Code)) { $result.code = $Code }
++  $result = $result | ConvertTo-Json -Compress
+   [Console]::Out.WriteLine("QURAN_RESULT:$result")
+ }
+ 
+@@ -214,9 +216,9 @@
+   }
+ 
+   if ($Target -eq 'word') {
+-    # Word's version-independent ProgID is stable across Office releases. The registry scan
+-    # also handles installations that expose only a versioned ProgID.
+-    $word = Get-ComApplication -BaseProgId 'Word.Application' -ProcessName 'WINWORD' 
++    # Word exposes the current text container through StoryType:
++    # 1 = main document text, 2 = existing footnotes, 3 = endnotes.
++    $word = Get-ComApplication -BaseProgId 'Word.Application' -ProcessName 'WINWORD'
+ 
+     if ($word.Documents.Count -lt 1) {
+       throw 'افتح مستند وُرد أولاً'
+@@ -229,16 +231,54 @@
+ 
+     $selection = $word.Selection
+     $range = $selection.Range
++    $storyType = [int]$range.StoryType
++
++    # A nested native footnote cannot be created in Word. Keep both the ayah and
++    # its address inside the current footnote as ordinary text instead.
++    if ($storyType -eq 2) {
++      $range.Text = "$ayahText $referenceText"
++      $word.Activate() | Out-Null
++      Write-Result $true 'تم إدراج الآية ومرجعها كنص داخل الهامش الموجود في Word' 'existing-footnote-text'
++      exit 0
++    }
++
++    # Native footnotes are only inserted from the main document story. Do not
++    # replace the user's selection in headers, endnotes, text boxes, or separators.
++    if ($storyType -ne 1) {
++      if ($storyType -eq 3) {
++        throw 'المؤشر داخل حاشية ختامية في Word. لإنشاء هامش جديد، ضعه في متن المستند.'
++      }
++      throw 'لإدراج هامش حقيقي في Word، ضع المؤشر داخل متن المستند أو داخل هامش موجود.'
++    }
++
+     $start = [int]$range.Start
++    $originalText = [string]$range.Text
++    $originalFootnoteCount = [int]$document.Footnotes.Count
+ 
+-    # Replace selected text (if any), then add a native numbered footnote immediately after it.
+-    $range.Text = $ayahText
+-    $end = $start + $ayahText.Length
+-    $footnoteRange = $document.Range($end, $end)
+-    $null = $document.Footnotes.Add($footnoteRange, [Type]::Missing, $referenceText)
++    try {
++      # Replace selected text (if any), then add a native numbered footnote immediately after it.
++      $range.Text = $ayahText
++      $end = $start + $ayahText.Length
++      $footnoteRange = $document.Range($end, $end)
++      $null = $document.Footnotes.Add($footnoteRange, [Type]::Missing, $referenceText)
++    }
++    catch {
++      # Avoid leaving an orphaned ayah in the document if Word rejects footnote creation.
++      try {
++        while ([int]$document.Footnotes.Count -gt $originalFootnoteCount) {
++          $document.Footnotes.Item([int]$document.Footnotes.Count).Delete()
++        }
++        $restoreRange = $document.Range($start, $start + $ayahText.Length)
++        $restoreRange.Text = $originalText
++      }
++      catch {
++        # Preserve the original automation error; rollback is best-effort only.
++      }
++      throw
++    }
+ 
+     $word.Activate() | Out-Null
+-    Write-Result $true 'تم إدراج الهامش في Word'
++    Write-Result $true 'تم إدراج الهامش في Word' 'native-footnote'
+     exit 0
+   }
+ 
+@@ -246,68 +286,65 @@
+     $indesign = Get-ComApplication -BaseProgId 'InDesign.Application' -ProcessName 'InDesign'
+ 
+     if ($indesign.Documents.Count -lt 1) {
+-      throw ' افتح انديزاين أولاً'
++      throw 'افتح انديزاين أولاً'
+     }
+ 
+     $activeDocument = $indesign.ActiveDocument
+     if ($null -eq $activeDocument) {
+-      throw 'لم يتم النسخ حاول مرة أخرى'
++      throw 'لم يتم العثور على مستند InDesign مفتوح'
+     }
+ 
+-    # Execute ExtendScript inside the connected InDesign instance; no external plug-in is required.
+-    $payloadLiteral = $payloadJson
+-    $payloadLiteral = $payloadLiteral.Replace([string][char]0x2028, '\u2028').Replace([string][char]0x2029, '\u2029')
+-    $jsx = @"
+-var quranPayload = $payloadLiteral;
+-app.doScript(function () {
+-    if (app.documents.length < 1) {
+-        throw new Error('لا يوجد مستند مفتوح في انديزاين');
+-    }
+-    if (!app.selection || app.selection.length < 1) {
+-        throw new Error('في انديزاين غير محدد النص');
++    # Use the packaged JSX file as the single source of truth for InDesign behavior.
++    # This keeps the source JSX and the code actually executed by PowerShell identical.
++    $jsxPath = Join-Path $PSScriptRoot 'insert-footnote.jsx'
++    if (-not (Test-Path -LiteralPath $jsxPath -PathType Leaf)) {
++      throw 'فایل اسکریپت داخلی InDesign در کنار فایل ارتباطی برنامه پیدا نشد.'
+     }
+ 
+-    var target = app.selection[0];
+-    var story = null;
+-    var startIndex = -1;
+-    var targetType = '';
+-    try { targetType = target && target.constructor ? target.constructor.name : ''; } catch (_) {}
+-
+-    var isInsertionPoint = targetType === 'InsertionPoint';
+-    if (!isInsertionPoint) {
+-        try { isInsertionPoint = !!(target && target.parentStory && typeof target.index === 'number'); } catch (_) {}
++    $jsx = [System.IO.File]::ReadAllText($jsxPath, [System.Text.Encoding]::UTF8)
++    if (-not $jsx.Contains('__QURAN_PAYLOAD_JSON__')) {
++      throw 'قالب اسکریپت InDesign معتبر نیست.'
+     }
+ 
+-    var isTextRange = targetType === 'Text' || targetType === 'TextStyleRange' || targetType === 'Word' || targetType === 'Character';
+-    if (!isTextRange) {
+-        try { isTextRange = !!(target && target.parentStory && target.insertionPoints && target.insertionPoints.length > 0); } catch (_) {}
+-    }
+-
+-    if (isInsertionPoint) {
+-        story = target.parentStory;
+-        startIndex = target.index;
+-        target.contents = quranPayload.text;
+-    } else if (isTextRange) {
+-        story = target.parentStory;
+-        startIndex = target.insertionPoints[0].index;
+-        target.contents = quranPayload.text;
+-    } else {
+-        throw new Error('ليس نصاً قابلاً للتحرير');
+-    }
++    $payloadLiteral = $payloadJson
++    $payloadLiteral = $payloadLiteral.Replace([string][char]0x2028, '\u2028').Replace([string][char]0x2029, '\u2029')
++    $jsx = $jsx.Replace('__QURAN_PAYLOAD_JSON__', $payloadLiteral)
+ 
+-    if (!story || startIndex < 0) {
+-        throw new Error('تعذّر تحديد موضع إدراج النص في انديزاين');
++    $indesignResult = [string]$indesign.DoScript([string]$jsx, 1246973031)
++    switch ($indesignResult.Trim()) {
++      'QURAN_OK_EXISTING_FOOTNOTE' {
++        Write-Result $true 'تم إدراج الآية ومرجعها كنص داخل الهامش الموجود في InDesign' 'existing-footnote-text'
++        exit 0
++      }
++      'QURAN_OK_NATIVE_FOOTNOTE' {
++        Write-Result $true 'تم إدراج الهامش في InDesign' 'native-footnote'
++        exit 0
++      }
++      'QURAN_ERROR|NO_DOCUMENT' {
++        Write-Result $false 'لم يتم العثور على مستند InDesign مفتوح'
++        exit 0
++      }
++      'QURAN_ERROR|NO_SELECTION' {
++        Write-Result $false 'ضع مؤشر الكتابة داخل إطار نص أو هامش موجود في InDesign أولاً'
++        exit 0
++      }
++      'QURAN_ERROR|TEXT_REQUIRED' {
++        Write-Result $false 'الموضع المحدد ليس نصاً قابلاً للتحرير في InDesign'
++        exit 0
++      }
++      'QURAN_ERROR|FOOTNOTE_WRITE_FAILED' {
++        Write-Result $false 'تعذّر إدراج النص داخل الهامش الموجود في InDesign'
++        exit 0
++      }
++      'QURAN_ERROR|STORY_INVALID' {
++        Write-Result $false 'تعذّر تحديد موضع صالح لإدراج النص في InDesign'
++        exit 0
++      }
++      default {
++        Write-Result $false 'تعذّر إدراج الآية والهامش في InDesign. تحقق من إطار النص وموضع المؤشر.'
++        exit 0
++      }
+     }
+-
+-    var endPoint = story.insertionPoints.item(startIndex + quranPayload.text.length);
+-    var footnote = endPoint.footnotes.add();
+-    footnote.insertionPoints[-1].contents = quranPayload.reference;
+-}, ScriptLanguage.JAVASCRIPT, undefined, UndoModes.ENTIRE_SCRIPT, 'Insert Quran footnote');
+-"@
+-
+-    $null = $indesign.DoScript([string]$jsx, 1246973031)
+-    Write-Result $true 'تم إدراج الهامش في انديزاين'
+-    exit 0
+   }
+   throw 'التطبيق المستهدف غير مدعوم'
+ }
+--- a/electron/main.cjs
++++ b/electron/main.cjs
+@@ -1,6 +1,6 @@
+ // Desktop shell (Electron). The web app (electron/dist, made by `npm run prepare:electron`) is served
+ // through the private address app://quran/, so it runs from files, without a server and without internet.
+-const { app, BrowserWindow, Menu, shell, protocol, ipcMain, clipboard, session } = require('electron');
++const { app, BrowserWindow, Menu, shell, protocol, ipcMain, session } = require('electron');
+ const { isInternalAppUrl, allowPermissionRequest, allowPermissionCheck } = require('./security.cjs');
+ const { createAppProtocolHandler, createPageProtocolHandler } = require('./protocol-handlers.cjs');
+ 
+@@ -67,7 +67,7 @@
+   }
+ }
+ 
+-/** Insert an ayah and its address as a native Word/InDesign footnote (Windows desktop only). */
++/** Insert an ayah with a native footnote, or as inline text when already inside a footnote. */
+ async function insertNativeFootnote(target, payload) {
+   if (process.platform !== 'win32') {
+     return Promise.resolve({ ok: false, message: 'درج خودکار پاورقی فقط در نسخه دسکتاپ ویندوز پشتیبانی می‌شود.' });
+@@ -78,18 +78,6 @@
+     return Promise.resolve({ ok: false, message: 'فایل داخلی درج پاورقی در بسته برنامه پیدا نشد. احتمالاً فایل Portable ناقص ساخته شده است.' });
+   }
+ 
+-  const fallbackText = payload.reference ? `${payload.text} ${payload.reference}` : payload.text;
+-  try {
+-    await clipboard.writeText(fallbackText);
+-  } catch (error) {
+-    // Native footnote insertion can still succeed even if the clipboard is unavailable.
+-    writeFootnoteLog('warning', {
+-      target,
+-      reason: 'clipboard-write-failed',
+-      message: error?.message || String(error),
+-    });
+-  }
+-
+   let payloadPath;
+   try {
+     payloadPath = path.join(app.getPath('temp'), `quran-footnote-${process.pid}-${crypto.randomUUID()}.json`);
+--- a/src/lib/copyText.ts
++++ b/src/lib/copyText.ts
+@@ -33,6 +33,7 @@
+  */
+ export function cleanSurahName(name: string): string {
+   return name
++    .normalize('NFC') // Preserve composed letters such as آ before removing combining Quranic marks.
+     .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]/gu, '') //Quran Marks 
+     .replace(/[\u0640]/gu, '')
+     .replace(/\u0671/gu, '\u0627') // alif wasla -> alif
+@@ -131,6 +132,8 @@
+       webUnavailable: 'در نسخهٔ وب پاورقی واقعی ایجاد نمی‌شود؛ متن آیه و نشانی آن کپی شد. برای درج پاورقی از نسخهٔ دسکتاپ استفاده کنید',
+       wordSuccess: 'آیه و پاورقی در Word درج شدند',
+       indesignSuccess: 'آیه و پاورقی در انديزاين درج شدند',
++      wordExistingFootnoteSuccess: 'متن آیه و مرجع آن در هامش موجود Word درج شدند',
++      indesignExistingFootnoteSuccess: 'متن آیه و مرجع آن در هامش موجود InDesign درج شدند',
+       insertFailed: 'درج پاورقی ناموفق بود',
+       fallbackCopied: 'آیه و نشانی آن به‌صورت متن عادی کپی شدند',
+       connectionFailed: 'اتصال به نرم‌افزار برقرار نشد',
+@@ -142,6 +145,8 @@
+     webUnavailable: 'لا يمكن إنشاء هامش حقيقية في إصدار الويب؛ تم نسخ الآية ومرجعها. استخدم إصدار Windows لإدراج الهامش',
+     wordSuccess: 'تم إدراج الآية والهامش في Word',
+     indesignSuccess: 'تم إدراج الآية والهامش في انديزاين',
++    wordExistingFootnoteSuccess: 'تم إدراج نص الآية ومرجعها داخل الهامش الموجود في Word',
++    indesignExistingFootnoteSuccess: 'تم إدراج نص الآية ومرجعها داخل الهامش الموجود في InDesign',
+     insertFailed: 'فشل إدراج الهامش',
+     fallbackCopied: '(تم النسخ كنص عادي)',
+     connectionFailed: 'تعذّر الاتصال بالتطبيق',
+@@ -150,8 +155,8 @@
+ }
+ 
+ /**
+- * Performs the configured copy operation. Native Word/InDesign footnotes are inserted
+- * by the Electron main process through the target application's own automation API.
++ * Performs the configured copy operation. New Word/InDesign footnotes are inserted
++ * through the target application's automation API; existing footnotes receive inline text.
+  */
+ export async function copyAyahPayload(
+   payload: AyahCopyPayload,
+@@ -188,10 +193,11 @@
+ 
+     });
+     if (result.ok) {
+-      reportFootnoteStatus(
+-        target === 'word' ? messages.wordSuccess : messages.indesignSuccess,
+-        true
+-      );
++      const insertedIntoExistingFootnote = result.code === 'existing-footnote-text';
++      const successMessage = target === 'word'
++        ? (insertedIntoExistingFootnote ? messages.wordExistingFootnoteSuccess : messages.wordSuccess)
++        : (insertedIntoExistingFootnote ? messages.indesignExistingFootnoteSuccess : messages.indesignSuccess);
++      reportFootnoteStatus(successMessage, true);
+       return { ok: true, insertedAsFootnote: true };
+     }
+ 
+--- a/src/lib/pageImages.ts
++++ b/src/lib/pageImages.ts
+@@ -11,8 +11,8 @@
+     quranApp?: {
+       /** true only when all page images are installed */
+       pages: boolean;
+-      /** Inserts text into the active Word/InDesign document and creates a real footnote. */
+-      insertFootnote?: (payload: { target: 'word' | 'indesign'; text: string; reference: string; language: Language }) => Promise<{ ok: boolean; message?: string }>;
++      /** Inserts into the active Word/InDesign document; existing footnotes receive inline text. */
++      insertFootnote?: (payload: { target: 'word' | 'indesign'; text: string; reference: string; language: Language }) => Promise<{ ok: boolean; message?: string; code?: string }>;
+     };
+   }
+ }

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 
 import type { SurahMeta, SurahEdition, AppSettings } from '@/types/quran';
 import AyahList from '@/components/reader/AyahList';
 import { useReaderContextMenu } from '@/components/reader/hooks/useReaderContextMenu';
 import ReaderHeader from '@/components/reader/ReaderHeader';
+import KeyboardShortcutsHelp from '@/components/KeyboardShortcutsHelp';
 import ReaderFooter from '@/components/reader/ReaderFooter';
 import { ReaderErrorState, ReaderLoadingState } from '@/components/reader/ReaderStates';
 import ContextMenu from '@/components/ContextMenu';
@@ -11,7 +12,13 @@ import { copyAyahPayload, createAyahCopyPayload, formatCopyFallback, numberSuffi
 import { getAyahText } from '@/lib/quranData';
 import { hasPageImages, type PageTarget } from '@/lib/pageImages';
 import { saveLastReadPosition } from '@/lib/lastRead';
+import { isBookmarked, toggleBookmarks } from '@/lib/bookmarks';
 import { BookOpen, Copy, Ellipsis } from 'lucide-react';
+
+function isDialogOrEditable(target: EventTarget | null): boolean {
+  return (target instanceof Element && Boolean(target.closest('input, textarea, select, [role="dialog"]'))) ||
+    (target instanceof HTMLElement && target.isContentEditable);
+}
 
 interface ReaderProps {
   surahMeta: SurahMeta | null;
@@ -38,6 +45,7 @@ interface ReaderProps {
   ) => void;
   hasPrev: boolean;
   hasNext: boolean;
+  hasOpenOverlay: boolean;
 }
 
 export default function Reader({
@@ -60,18 +68,31 @@ export default function Reader({
   onNavigateSurah,
   hasPrev,
   hasNext,
+  hasOpenOverlay,
 }: ReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollFrameRef = useRef<number | null>(null);
   const [selectionCopy, setSelectionCopy] = useState<{ payload: ReturnType<typeof selectionCopyPayload>; count: number } | null>(null);
   const [selectedAyahs, setSelectedAyahs] = useState<Set<number>>(() => new Set());
+  const [keyboardHelpOpen, setKeyboardHelpOpen] = useState(false);
+  const [bookmarkFeedback, setBookmarkFeedback] = useState<'added' | 'removed' | 'updated' | null>(null);
   const ayahRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const keyboardSelectionAnchorRef = useRef<number | null>(null);
 
   // Page images
   const pagesOn = hasPageImages();
 
+  // Brief Arabic confirmation after the B bookmark shortcut.
+  useEffect(() => {
+    if (!bookmarkFeedback) return;
+    const timeoutId = window.setTimeout(() => setBookmarkFeedback(null), 1800);
+    return () => window.clearTimeout(timeoutId);
+  }, [bookmarkFeedback]);
+
   // Clicking ayah rows toggles them into a shared multi-selection.
   const handleToggleAyahSelection = useCallback((ayahNumber: number) => {
+    // Remember the clicked/focused ayah as the anchor for a Shift+Arrow range.
+    keyboardSelectionAnchorRef.current = ayahNumber;
     // A native text selection is handled independently by the browser-copy path.
     setSelectionCopy(null);
     setSelectedAyahs((previous) => {
@@ -81,6 +102,30 @@ export default function Reader({
       return next;
     });
   }, []);
+
+  const clearReaderSelection = useCallback((clearNativeText = false) => {
+    setSelectedAyahs(new Set());
+    setSelectionCopy(null);
+    keyboardSelectionAnchorRef.current = null;
+
+    if (clearNativeText) {
+      const selection = window.getSelection();
+      const root = scrollRef.current;
+      const anchorInside = Boolean(root && selection?.anchorNode && root.contains(selection.anchorNode));
+      const focusInside = Boolean(root && selection?.focusNode && root.contains(selection.focusNode));
+      if (selection && !selection.isCollapsed && (anchorInside || focusInside)) {
+        selection.removeAllRanges();
+      }
+    }
+  }, []);
+
+  const handleReaderAreaClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest('[data-ayah-row]')) return;
+    // A click on the empty reader canvas clears whole-ayah selection only.
+    // Native text selection is left to the browser's normal mouse behavior.
+    clearReaderSelection();
+  }, [clearReaderSelection]);
 
   // Build the same copy payload used by text-range selection, but from whole clicked ayahs.
   const clickedAyahCopy = useMemo(() => {
@@ -111,6 +156,14 @@ export default function Reader({
   // takes precedence; clicked rows provide the whole-ayah fallback.
   const activeCopy = selectionCopy ?? clickedAyahCopy;
 
+  const { menu, menuItems, closeMenu, handleContextMenu } = useReaderContextMenu({
+    scrollRef,
+    surahMeta,
+    surahData,
+    settings,
+  });
+  const readerShortcutsBlocked = hasOpenOverlay || keyboardHelpOpen || Boolean(menu);
+
   const copyClickedAyahs = useCallback(async () => {
     if (!clickedAyahCopy?.payload) return;
     const result = await copyAyahPayload(
@@ -118,33 +171,32 @@ export default function Reader({
       settings.copyReferenceStyle,
       settings.language,
     );
-    if (result.ok) setSelectedAyahs(new Set());
+    if (result.ok) {
+      setSelectedAyahs(new Set());
+      keyboardSelectionAnchorRef.current = null;
+    }
   }, [clickedAyahCopy, settings.copyReferenceStyle, settings.language]);
 
   // Handle Ctrl+C / Cmd+C explicitly so whole-ayah click selection works even
   // when the browser has no native text selection.
   useEffect(() => {
     const handleCopyShortcut = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'c' || !clickedAyahCopy) return;
+      if (event.defaultPrevented || readerShortcutsBlocked || !clickedAyahCopy) return;
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'c') return;
+      if (isDialogOrEditable(event.target) || isDialogOrEditable(document.activeElement)) return;
 
       const nativeSelection = window.getSelection();
       if (nativeSelection && !nativeSelection.isCollapsed && nativeSelection.toString().trim()) return;
 
-      const activeElement = document.activeElement;
-      if (
-        activeElement instanceof HTMLInputElement ||
-        activeElement instanceof HTMLTextAreaElement ||
-        activeElement instanceof HTMLSelectElement ||
-        (activeElement instanceof HTMLElement && activeElement.isContentEditable)
-      ) return;
-
+      // Suppress the browser's copy event on repeats too, so holding the key
+      // cannot insert the same text again while a footnote request is pending.
       event.preventDefault();
-      void copyClickedAyahs();
+      if (!event.repeat) void copyClickedAyahs();
     };
 
     document.addEventListener('keydown', handleCopyShortcut);
     return () => document.removeEventListener('keydown', handleCopyShortcut);
-  }, [clickedAyahCopy, copyClickedAyahs]);
+  }, [clickedAyahCopy, copyClickedAyahs, readerShortcutsBlocked]);
 
   // Track native selections in one or more ayahs and expose an explicit copy action.
   const updateMultiAyahSelection = useCallback(() => {
@@ -199,6 +251,7 @@ export default function Reader({
         setSelectionCopy(null);
       } else if (clickedAyahCopy) {
         setSelectedAyahs(new Set());
+        keyboardSelectionAnchorRef.current = null;
       }
     }
   }, [activeCopy, selectionCopy, clickedAyahCopy, settings.copyReferenceStyle, settings.language]);
@@ -209,12 +262,9 @@ export default function Reader({
       const root = scrollRef.current;
 
       if (
-        !root ||
-        document.activeElement instanceof HTMLInputElement ||
-        document.activeElement instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
+        !root || e.defaultPrevented || readerShortcutsBlocked ||
+        isDialogOrEditable(e.target) || isDialogOrEditable(document.activeElement)
+      ) return;
 
       const nativeSelection = window.getSelection();
       const hasNativeTextSelection = Boolean(
@@ -240,6 +290,7 @@ export default function Reader({
       void copyAyahPayload(payload, settings.copyReferenceStyle, settings.language).then(({ ok }) => {
         if (ok && !hasNativeTextSelection && clickedAyahCopy) {
           setSelectedAyahs(new Set());
+          keyboardSelectionAnchorRef.current = null;
         }
       });
     };
@@ -249,14 +300,200 @@ export default function Reader({
     return () => {
       document.removeEventListener('copy', onCopy);
     };
-  }, [clickedAyahCopy, settings.copyNumberStyle, settings.omitLastAyahNumber, settings.copyReferenceStyle, settings.copyAyahBracketStyle, settings.language, surahMeta?.name]);
+  }, [clickedAyahCopy, readerShortcutsBlocked, settings.copyNumberStyle, settings.omitLastAyahNumber, settings.copyReferenceStyle, settings.copyAyahBracketStyle, settings.language, surahMeta?.name]);
 
-  const { menu, menuItems, closeMenu, handleContextMenu } = useReaderContextMenu({
-    scrollRef,
-    surahMeta,
-    surahData,
-    settings,
-  });
+  // Keyboard navigation is scoped to the reader and never hijacks typing,
+  // native text selection, or controls elsewhere in the application.
+  useEffect(() => {
+    const handleAyahKeyboard = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || loading || readerShortcutsBlocked) return;
+
+      const activeElement = document.activeElement;
+      if (isDialogOrEditable(event.target) || isDialogOrEditable(activeElement)) return;
+
+      // Alt+H opens the Arabic keyboard-shortcuts guide.
+      if (
+        !event.repeat && event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey &&
+        event.code === 'KeyH'
+      ) {
+        event.preventDefault();
+        setKeyboardHelpOpen(true);
+        return;
+      }
+
+      if (event.altKey) return;
+
+      // A mouse-created text range takes priority over whole-ayah shortcuts.
+      // This keeps Shift+Arrow available for extending a partial Arabic selection.
+      const nativeSelection = window.getSelection();
+      const readerRoot = scrollRef.current;
+      const hasNativeTextSelection = Boolean(
+        readerRoot && nativeSelection && !nativeSelection.isCollapsed &&
+        nativeSelection.toString().trim() && (
+          (nativeSelection.anchorNode && readerRoot.contains(nativeSelection.anchorNode)) ||
+          (nativeSelection.focusNode && readerRoot.contains(nativeSelection.focusNode))
+        )
+      );
+      if (hasNativeTextSelection) return;
+
+      const totalAyahs = surahData?.[0]?.ayahs.length ?? 0;
+      if (totalAyahs < 1) return;
+
+      const focusAyah = (ayahNumber: number) => {
+        const row = ayahRefs.current.get(ayahNumber)?.querySelector<HTMLElement>('[data-ayah-row]');
+        if (!row) return false;
+        row.focus({ preventScroll: true });
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return true;
+      };
+
+      const isCommandKey = event.ctrlKey || event.metaKey;
+
+      // Ctrl+Left / Ctrl+Right: move to the previous / next surah.
+      if (isCommandKey && !event.shiftKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+        event.preventDefault();
+        clearReaderSelection();
+        if (event.key === 'ArrowLeft' && hasPrev) onPrev();
+        if (event.key === 'ArrowRight' && hasNext) onNext();
+        return;
+      }
+
+      // Ctrl+Home / Ctrl+End: focus the first / last ayah in this surah.
+      if (isCommandKey && !event.shiftKey && (event.key === 'Home' || event.key === 'End')) {
+        event.preventDefault();
+        const targetAyah = event.key === 'Home' ? 1 : totalAyahs;
+        setSelectedAyahs(new Set());
+        setSelectionCopy(null);
+        keyboardSelectionAnchorRef.current = targetAyah;
+        focusAyah(targetAyah);
+        return;
+      }
+
+      // Ayah-to-ayah movement and range selection require an ayah row to be focused.
+      if (
+        !(activeElement instanceof HTMLElement) ||
+        !readerRoot?.contains(activeElement) ||
+        !activeElement.matches('[data-ayah-row]')
+      ) return;
+
+      const currentAyah = Number(activeElement.dataset.ayahRow);
+      if (!Number.isInteger(currentAyah) || currentAyah < 1) return;
+
+      const plainKey = !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey;
+
+      if (plainKey && (event.code === 'KeyS' || event.key.toLowerCase() === 's')) {
+        event.preventDefault();
+        handleToggleAyahSelection(currentAyah);
+        return;
+      }
+
+      // B toggles the focused ayah, or every currently selected ayah, in bookmarks.
+      // Pressing it again removes the same ayah(s) from the bookmarks.
+      if (plainKey && event.code === 'KeyB' && surahMeta) {
+        event.preventDefault();
+        const numbers = selectedAyahs.size > 0 ? [...selectedAyahs] : [currentAyah];
+        const bookmarkStates = numbers.map((number) => isBookmarked(surahMeta.number, number));
+        const allBookmarked = bookmarkStates.every(Boolean);
+        const noneBookmarked = bookmarkStates.every((bookmarked) => !bookmarked);
+        toggleBookmarks(numbers.map((number) => ({
+          surahNumber: surahMeta.number,
+          ayahNumber: number,
+        })));
+        setBookmarkFeedback(allBookmarked ? 'removed' : noneBookmarked ? 'added' : 'updated');
+        setSelectionCopy(null);
+        return;
+      }
+
+      // M opens the Mushaf page and highlights the focused ayah.
+      if (plainKey && event.code === 'KeyM' && pagesOn) {
+        const page = surahData?.[0]?.ayahs[currentAyah - 1]?.page;
+        if (page && surahMeta) {
+          event.preventDefault();
+          onShowPage({ page, surah: surahMeta.number, ayah: currentAyah });
+        }
+        return;
+      }
+
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      if (isCommandKey && !event.shiftKey) return;
+
+      event.preventDefault();
+      const direction = event.key === 'ArrowUp' ? -1 : 1;
+      const anchor = keyboardSelectionAnchorRef.current ?? currentAyah;
+      let targetAyah: number;
+
+      if (event.shiftKey) {
+        // Shift+Arrow adds a contiguous ayah range. Ctrl/Cmd+Shift+Arrow
+        // extends that range to the beginning/end of the current surah.
+        targetAyah = isCommandKey
+          ? direction < 0 ? 1 : totalAyahs
+          : Math.min(totalAyahs, Math.max(1, currentAyah + direction));
+
+        const first = Math.min(anchor, targetAyah);
+        const last = Math.max(anchor, targetAyah);
+        const nextSelection = new Set<number>();
+        for (let number = first; number <= last; number += 1) nextSelection.add(number);
+
+        keyboardSelectionAnchorRef.current = anchor;
+        setSelectionCopy(null);
+        setSelectedAyahs(nextSelection);
+        focusAyah(targetAyah);
+        return;
+      }
+
+      // Plain arrows move focus and clear the previous whole-ayah selection.
+      targetAyah = Math.min(totalAyahs, Math.max(1, currentAyah + direction));
+      if (targetAyah === currentAyah) return;
+
+      setSelectedAyahs(new Set());
+      setSelectionCopy(null);
+      keyboardSelectionAnchorRef.current = targetAyah;
+      focusAyah(targetAyah);
+    };
+
+    document.addEventListener('keydown', handleAyahKeyboard);
+    return () => document.removeEventListener('keydown', handleAyahKeyboard);
+  }, [
+    loading, readerShortcutsBlocked, surahData, ayahRefs,
+    selectedAyahs, surahMeta, pagesOn, onShowPage,
+    handleToggleAyahSelection, clearReaderSelection, hasPrev, hasNext, onPrev, onNext,
+  ]);
+
+  // Escape closes the reader context menu first, then clears ayah/text selection.
+  // Other open application panels keep their existing Escape behavior.
+  useEffect(() => {
+    const handleReaderEscape = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.key !== 'Escape' || hasOpenOverlay || keyboardHelpOpen) return;
+      if (isDialogOrEditable(event.target) || isDialogOrEditable(document.activeElement)) return;
+
+      if (menu) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMenu();
+        return;
+      }
+
+      const selection = window.getSelection();
+      const root = scrollRef.current;
+      const anchorInside = Boolean(root && selection?.anchorNode && root.contains(selection.anchorNode));
+      const focusInside = Boolean(root && selection?.focusNode && root.contains(selection.focusNode));
+      const hasReaderTextSelection = Boolean(
+        selection && !selection.isCollapsed && (anchorInside || focusInside)
+      );
+
+      if (selectedAyahs.size === 0 && !selectionCopy && !hasReaderTextSelection) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      clearReaderSelection(true);
+    };
+
+    document.addEventListener('keydown', handleReaderEscape);
+    return () => document.removeEventListener('keydown', handleReaderEscape);
+  }, [
+    hasOpenOverlay, keyboardHelpOpen, menu, closeMenu, selectedAyahs.size,
+    selectionCopy, clearReaderSelection,
+  ]);
 
   // Save last read position while scrolling
   const activeSurahNumber = surahMeta?.number;
@@ -384,6 +621,7 @@ export default function Reader({
         onOpenBookmarks={onOpenBookmarks}
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
+        onOpenKeyboardHelp={() => setKeyboardHelpOpen(true)}
         onNavigateSurah={onNavigateSurah}
       />
 
@@ -406,7 +644,7 @@ export default function Reader({
               ? 'بارگذاری سوره ناموفق'
               : 'تعذّر تحميل السور'}
           </span>
-          <button type="button" onClick={onRetry} className="underline underline-offset-2">
+          <button type="button" onClick={onRetry} className="cursor-pointer underline underline-offset-2">
             {settings.language === 'fa' ? 'تلاش دوباره' : 'إعادة المحاولة'}
           </button>
         </div>
@@ -418,6 +656,7 @@ export default function Reader({
         ref={scrollRef}
         onContextMenu={handleContextMenu}
         onScroll={handleReaderScroll}
+        onClick={handleReaderAreaClick}
         onMouseUp={updateMultiAyahSelection}
         onKeyUp={updateMultiAyahSelection}
         className="flex-1 min-h-0 overflow-y-auto pb-24 sm:pb-28"
@@ -443,7 +682,7 @@ export default function Reader({
             type="button"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => void handleCopySelectedAyahs()}
-            className="inline-flex items-center mb-7 gap-2 rounded-full bg-(--accent) px-4  py-2.5 text-sm font-medium text-white shadow-lg transition-smooth hover:brightness-110  focus-visible:outline-offset-2 focus-visible:outline-(--accent)"
+            className="cursor-pointer inline-flex items-center mb-7 gap-2 rounded-full bg-(--accent) px-4  py-2.5 text-sm font-medium text-white shadow-lg transition-smooth hover:brightness-110  focus-visible:outline-offset-2 focus-visible:outline-(--accent)"
           >
             <Copy className="h-4 w-4" />
             {settings.language === 'fa'
@@ -465,6 +704,21 @@ export default function Reader({
         </div>
       )}
 
+      {bookmarkFeedback && (
+        <div
+          role="status"
+          aria-live="polite"
+          dir="rtl"
+          className="pointer-events-none absolute bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full border border-(--border) bg-(--bg-card) px-4 py-2 text-sm font-medium text-(--text-primary) shadow-lg"
+        >
+          {bookmarkFeedback === 'added'
+            ? 'أُضيفت العلامة'
+            : bookmarkFeedback === 'removed'
+              ? 'أُزيلت العلامة'
+              : 'تم تحديث العلامات'}
+        </div>
+      )}
+
       <ReaderFooter
         language={settings.language}
         hasPrev={hasPrev}
@@ -482,6 +736,10 @@ export default function Reader({
           items={menuItems}
           onClose={closeMenu}
         />
+      )}
+
+      {keyboardHelpOpen && (
+        <KeyboardShortcutsHelp onClose={() => setKeyboardHelpOpen(false)} />
       )}
 
     </div>

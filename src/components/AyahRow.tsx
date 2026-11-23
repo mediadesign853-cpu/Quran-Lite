@@ -1,4 +1,4 @@
-﻿import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, type MouseEvent as ReactMouseEvent } from 'react';
 import { Copy, Check, Bookmark, BookmarkCheck, Eye, FileImage } from 'lucide-react';
 import type { SurahEdition, AppSettings } from '@/types/quran';
 import { getAyahText, getHighlightedSegments } from '@/lib/quranData';
@@ -65,13 +65,14 @@ function AyahRow({
     toggleBookmark({ surahNumber, ayahNumber });
   }, [surahNumber, ayahNumber]);
 
-  const handleRowClick = useCallback(() => {
+  const handleRowClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
     // Keep native mouse text selection intact. Row selection is only used
     // when the click did not leave a text range selected.
     const textSelection = window.getSelection();
     if (textSelection && !textSelection.isCollapsed && textSelection.toString().trim()) {
       return;
     }
+    event.currentTarget.focus({ preventScroll: true });
     onToggleSelect(ayahNumber);
   }, [ayahNumber, onToggleSelect]);
 
@@ -87,9 +88,17 @@ function AyahRow({
 
   return (
     <div
+      role="group"
+      tabIndex={isTarget || ayahNumber === 1 ? 0 : -1}
+      aria-roledescription={settings.language === 'fa' ? 'آیه' : 'الآية'}
+      aria-label={settings.language === 'fa'
+        ? `آیه ${ayahNumber}${selected ? '، انتخاب‌شده' : ''}`
+        : `الآية ${ayahNumber}${selected ? '، محددة' : ''}`}
+      aria-keyshortcuts={`S B${onShowPage && pageNumber ? ' M' : ''} Shift+ArrowUp Shift+ArrowDown Control+Shift+ArrowUp Control+Shift+ArrowDown Control+ArrowLeft Control+ArrowRight Control+Home Control+End`}
       onClick={handleRowClick}
       data-ayah-row={ayahNumber}
-      className={`group cursor-pointer rounded-xl transition-colors duration-200 ${isTarget
+      data-selected={selected ? 'true' : 'false'}
+      className={`group cursor-pointer rounded-xl transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 ${isTarget
         ? 'bg-amber-100/60 dark:bg-amber-900/20 ring-2 ring-amber-400/50'
         : selected
           ? 'bg-(--accent)/8 ring-1 ring-(--accent)/20'
@@ -131,7 +140,7 @@ function AyahRow({
         <div className="flex shrink-0 flex-col gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
           <button
             onClick={(event) => { event.stopPropagation(); handleCopy(); }}
-            className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-(--accent)]/10 focus-visible:outline-2 focus-visible:outline-(--accent)"
+            className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-(--accent)/10 focus-visible:outline-2 focus-visible:outline-(--accent)"
             aria-label={settings.language === 'fa' ? 'کپی آیه' : 'نسخ الآية'}
             data-tooltip={settings.language === 'fa' ? 'کپی' : 'نسخ'}
           >
@@ -171,4 +180,3 @@ function AyahRow({
 }
 
 export default memo(AyahRow);
-

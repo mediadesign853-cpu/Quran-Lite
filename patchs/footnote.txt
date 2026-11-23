@@ -1,0 +1,41 @@
+Quran Reader - Stage 1 and Stage 2 source changes
+
+Files changed (5):
+- electron/integrations/insert-footnote.ps1
+- electron/integrations/insert-footnote.jsx
+- electron/main.cjs
+- src/lib/copyText.ts
+- src/lib/pageImages.ts
+
+Stage 1:
+- Word detects whether the active range is in the main story or an existing footnote.
+- In an existing Word footnote (StoryType 2), the ayah and its reference are inserted as ordinary text in that same footnote.
+- New native Word footnotes are still created only from the main document story (StoryType 1).
+- Other Word story types are rejected before the selected text is changed.
+- InDesign now executes the packaged insert-footnote.jsx file as the single source of truth.
+- When selection is inside an existing InDesign footnote, the ayah and reference are inserted as ordinary text in that same footnote; no new footnote is created in the main story.
+- From the main InDesign story, the existing native-footnote behavior is preserved.
+- Electron no longer pre-writes the ayah and reference to the system clipboard before a footnote attempt. The renderer's existing fallback copy still runs if insertion fails.
+- Existing-footnote success messages are distinguished from new native-footnote success messages.
+
+Stage 2:
+- cleanSurahName normalizes Unicode to NFC before stripping Quranic combining marks. This preserves the madda in Al Imran and outputs "سورة آل عمران".
+
+Validation performed:
+- node --check electron/main.cjs: passed.
+- node --check on insert-footnote.jsx: passed.
+- JSX syntax check after replacing the payload placeholder with Arabic JSON: passed.
+- node --test scripts/test-electron-security.cjs: 9 passed, 0 failed.
+- node scripts/verify-data.mjs: passed (114 surahs, 6,236 ayahs).
+- Runtime check of cleanSurahName/formatAyahReference against all 114 surah names: passed.
+
+Not performed:
+- Full npm run check / Vite build / Electron packaging: node_modules is not present in the uploaded archive, and the Python tools folder used by two package scripts is absent.
+- Live Word and InDesign COM/ExtendScript tests: this environment does not have Windows, Word, or InDesign.
+
+Before distributing a build on Windows:
+  1. Run npm ci.
+  2. Restore the omitted tools/ Python test directory from your full source backup, then run npm run check.
+  3. Run npm run dist:win to rebuild the frontend, refresh electron/dist, and package the Windows targets.
+
+The archive keeps the original dist/ and electron/dist/ files unchanged. The normal dist:win script rebuilds them from the modified TypeScript source before packaging. The supplied ZIP does not include the omitted tools/ directory, so npm run check will not complete until it is restored.

@@ -1,9 +1,10 @@
 /* Quran Reader - InDesign footnote bridge.
  * ExtendScript ES3-compatible: designed for InDesign CC 2018 (13.x) and later.
- * The outer COM DoScript call owns the undo transaction; do not nest app.doScript here.
+ * The script is loaded by insert-footnote.ps1 and receives its JSON payload below.
  */
+var quranPayload = __QURAN_PAYLOAD_JSON__;
+
 (function () {
-    var payload = __QURAN_PAYLOAD_JSON__;
     function quranHasType(object, expected) {
         try {
             if (object && object.constructor && object.constructor.name === expected) return true;
@@ -17,7 +18,7 @@
     function quranFindFootnote(object) {
         var current = object;
         var depth;
-        for (depth = 0; depth < 16 && current; depth += 1) {
+        for (depth = 0; depth < 20 && current; depth += 1) {
             try {
                 if (quranHasType(current, 'Footnote') && current.isValid) {
                     return current;
@@ -34,9 +35,27 @@
         return null;
     }
 
-    try {
-        if (!payload || !payload.text || !payload.reference) {
-            return 'QURAN_ERROR|INSERT_FAILED';
+    function quranIsInsertionPoint(object) {
+        return quranHasType(object, 'InsertionPoint');
+    }
+
+    function quranIsTextRange(object) {
+        return quranHasType(object, 'Text') ||
+            quranHasType(object, 'TextStyleRange') ||
+            quranHasType(object, 'Word') ||
+            quranHasType(object, 'Character') ||
+            quranHasType(object, 'Line') ||
+            quranHasType(object, 'Paragraph') ||
+            quranHasType(object, 'TextColumn');
+    }
+
+    function quranIsEditableTextTarget(object) {
+        return quranIsInsertionPoint(object) || quranIsTextRange(object);
+    }
+
+    function quranRunInsert() {
+        if (!quranPayload || !quranPayload.text || !quranPayload.reference) {
+            return 'QURAN_ERROR|INVALID_PAYLOAD';
         }
         if (!app.documents || app.documents.length < 1) {
             return 'QURAN_ERROR|NO_DOCUMENT';
@@ -51,38 +70,52 @@
         }
 
         var target = app.selection[0];
-        var story = null;
-        var startIndex = -1;
+        if (!quranIsEditableTextTarget(target)) {
+            return 'QURAN_ERROR|TEXT_REQUIRED';
+        }
+
+        var insertText = String(quranPayload.text);
+        var referenceText = String(quranPayload.reference);
         var footnoteContext = quranFindFootnote(target);
 
-        /* Recover a caret left in a previous footnote, using its main-story marker. */
+        /*
+         * A selection inside an existing InDesign footnote must stay in that footnote.
+         * A nested footnote is not supported by InDesign, so put the address in ordinary
+         * text immediately after the ayah instead of creating a new main-story footnote.
+         */
         if (footnoteContext) {
-            var oldMarker = footnoteContext.storyOffset;
-            if (!oldMarker || !oldMarker.isValid || !oldMarker.parentStory) {
-                return 'QURAN_ERROR|FOOTNOTE_POSITION';
+            var oldFootnoteContents = '';
+            try {
+                oldFootnoteContents = String(target.contents);
+            } catch (readError) {}
+
+            try {
+                target.contents = insertText + ' ' + referenceText;
+            } catch (writeError) {
+                try { target.contents = oldFootnoteContents; } catch (restoreError) {}
+                return 'QURAN_ERROR|FOOTNOTE_WRITE_FAILED';
             }
-            story = oldMarker.parentStory;
-            startIndex = Number(oldMarker.index) + 1;
-            target = story.insertionPoints.item(startIndex);
-        } else {
-            var isInsertionPoint = quranHasType(target, 'InsertionPoint');
-            var isTextRange = quranHasType(target, 'Text') ||
-                quranHasType(target, 'TextStyleRange') ||
-                quranHasType(target, 'Word') ||
-                quranHasType(target, 'Character') ||
-                quranHasType(target, 'Line') ||
-                quranHasType(target, 'Paragraph') ||
-                quranHasType(target, 'TextColumn');
-            if (isInsertionPoint) {
-                story = target.parentStory;
-                startIndex = Number(target.index);
-            } else if (isTextRange) {
-                story = target.parentStory;
-                if (target.insertionPoints && target.insertionPoints.length > 0) {
-                    startIndex = Number(target.insertionPoints.item(0).index);
-                }
-            } else {
-                return 'QURAN_ERROR|TEXT_REQUIRED';
+
+            /* Keep the insertion point in the existing footnote for the next operation. */
+            try {
+                var footnoteEnd = footnoteContext.insertionPoints.item(-1);
+                if (footnoteEnd && footnoteEnd.isValid) app.select(footnoteEnd);
+            } catch (caretError) {
+                /* The inserted text is already safe; caret restoration is non-critical. */
+            }
+
+            return 'QURAN_OK_EXISTING_FOOTNOTE';
+        }
+
+        var story = null;
+        var startIndex = -1;
+        if (quranIsInsertionPoint(target)) {
+            story = target.parentStory;
+            startIndex = Number(target.index);
+        } else if (quranIsTextRange(target)) {
+            story = target.parentStory;
+            if (target.insertionPoints && target.insertionPoints.length > 0) {
+                startIndex = Number(target.insertionPoints.item(0).index);
             }
         }
 
@@ -91,30 +124,48 @@
         }
 
         var storyId = Number(story.id);
-        var insertText = String(payload.text);
-        var referenceText = String(payload.reference);
+        var originalContents = '';
+        try {
+            originalContents = String(target.contents);
+        } catch (contentsError) {}
 
-        /* Replace a text selection, or insert at the active insertion point. */
-        target.contents = insertText;
+        var footnote = null;
+        try {
+            /* Replace a text selection, or insert at the active insertion point. */
+            target.contents = insertText;
 
-        /* Re-resolve the story after mutation; old InDesign specifiers can become stale. */
-        story = doc.stories.itemByID(storyId);
-        if (!story || !story.isValid) {
-            return 'QURAN_ERROR|STORY_INVALID';
-        }
+            /* Re-resolve the story after mutation; old InDesign specifiers can become stale. */
+            story = doc.stories.itemByID(storyId);
+            if (!story || !story.isValid) throw new Error('STORY_INVALID');
 
-        var endIndex = startIndex + insertText.length;
-        var endPoint = story.insertionPoints.item(endIndex);
-        if (!endPoint || !endPoint.isValid) {
-            return 'QURAN_ERROR|STORY_INVALID';
-        }
+            var endIndex = startIndex + insertText.length;
+            var endPoint = story.insertionPoints.item(endIndex);
+            if (!endPoint || !endPoint.isValid) throw new Error('STORY_INVALID');
 
-        var footnote = endPoint.footnotes.add();
-        if (!footnote || !footnote.isValid) {
+            footnote = endPoint.footnotes.add();
+            if (!footnote || !footnote.isValid) throw new Error('INSERT_FAILED');
+
+            footnote.insertionPoints.item(-1).contents = referenceText;
+        } catch (insertError) {
+            /* Roll back the text and any partially-created footnote before reporting failure. */
+            try {
+                if (footnote && footnote.isValid) footnote.remove();
+            } catch (removeError) {}
+            try {
+                story = doc.stories.itemByID(storyId);
+                if (story && story.isValid) {
+                    var lastInsertedIndex = startIndex + insertText.length - 1;
+                    if (lastInsertedIndex >= startIndex) {
+                        story.characters.itemByRange(startIndex, lastInsertedIndex).contents = originalContents;
+                    }
+                }
+            } catch (rollbackError) {}
+
+            if (insertError && insertError.message === 'STORY_INVALID') {
+                return 'QURAN_ERROR|STORY_INVALID';
+            }
             return 'QURAN_ERROR|INSERT_FAILED';
         }
-
-        footnote.insertionPoints.item(-1).contents = referenceText;
 
         /* Restore the caret to the main story after the marker for repeated insertions. */
         try {
@@ -129,12 +180,22 @@
                     if (nextIndex >= 0) app.select(story.insertionPoints.item(nextIndex));
                 }
             }
-        } catch (restoreError) {
-            /* The footnote already exists. A caret-restore failure must not cause fallback paste. */
+        } catch (restoreCaretError) {
+            /* The footnote already exists; a caret-restore failure must not trigger fallback. */
         }
 
-        return 'QURAN_OK';
-    } catch (error) {
+        return 'QURAN_OK_NATIVE_FOOTNOTE';
+    }
+
+    try {
+        return app.doScript(
+            quranRunInsert,
+            ScriptLanguage.JAVASCRIPT,
+            undefined,
+            UndoModes.ENTIRE_SCRIPT,
+            'Insert Quran footnote'
+        );
+    } catch (scriptError) {
         return 'QURAN_ERROR|INSERT_FAILED';
     }
-})()
+})();

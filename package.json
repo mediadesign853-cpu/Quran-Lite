@@ -1,7 +1,7 @@
 {
   "name": "quran-reader",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "description": "Offline Quran Reader",
   "repository": {
@@ -36,7 +36,7 @@
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/vazirmatn": "^5.3.0",
-    "lucide-react": "^1.74.0",
+    "lucide-react": "^1.78.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

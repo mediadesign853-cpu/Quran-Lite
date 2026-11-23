@@ -22,7 +22,7 @@ export default function UpdatePage({ version, onUpdate, onDismiss }: UpdatePageP
     <div
       dir="rtl"
       lang="ar"
-      className="fixed inset-0 z-[60] flex items-center justify-center p-6"
+      className="fixed inset-0 z-60 flex items-center justify-center p-6"
       role="dialog"
       aria-modal="true"
       aria-label="تحديث البرنامج"

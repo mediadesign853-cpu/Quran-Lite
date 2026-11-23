@@ -296,7 +296,7 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
                 <Toggle
                   active={settings.omitLastAyahNumber}
                   onClick={() => update({ omitLastAyahNumber: !settings.omitLastAyahNumber })}
-                  label={settings.omitLastAyahNumber ? (fa ? 'فعال' : 'تشغيل' ) : (fa ? 'غیرفعال' : 'تعطيل')}
+                  label={settings.omitLastAyahNumber ? (fa ? 'فعال' : 'اظهار' ) : (fa ? 'غیرفعال' : 'اخفاء')}
                 />
               </div>
             </div>

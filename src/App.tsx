@@ -191,6 +191,80 @@ export default function App() {
     saveSettings(next);
   }, [settings]);
 
+  // Global application shortcuts. They stay inactive while typing in an editable
+  // control or while the Mushaf image / update overlay is open.
+  useEffect(() => {
+    const handleGlobalShortcuts = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat || event.key === 'Escape') return;
+
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const command = event.ctrlKey || event.metaKey;
+      const isSearchShortcut = command && !event.altKey && !event.shiftKey && event.code === 'KeyF';
+      const isSearchInput = Boolean(target?.hasAttribute('data-quran-search'));
+      const isEditable = Boolean(target && (
+        target.matches('input, textarea, select, [contenteditable="true"]') ||
+        target.isContentEditable
+      ));
+
+      // Do not hijack typing or controls. Ctrl/Cmd+F alone is allowed in the
+      // search input itself so the current query can be selected again.
+      if (target?.closest('[role="dialog"]')) return;
+      if (isEditable && !(isSearchShortcut && isSearchInput)) return;
+
+      if (viewPage !== null || (updateAvailable && !dismissedUpdate)) return;
+
+      const plainAlt = event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+
+      // Ctrl/Cmd+F: focus the Quran search box directly.
+      if (isSearchShortcut) {
+        event.preventDefault();
+        setSidebarOpen(false);
+        setBookmarksOpen(false);
+        setSettingsOpen(false);
+        window.dispatchEvent(new Event('quran:focus-search'));
+        return;
+      }
+
+      // Alt+S: open/close the surah list.
+      if (plainAlt && event.code === 'KeyS') {
+        event.preventDefault();
+        setBookmarksOpen(false);
+        setSettingsOpen(false);
+        setSidebarOpen((open) => !open);
+        return;
+      }
+
+      // Alt+B: open/close saved bookmarks.
+      if (plainAlt && event.code === 'KeyB') {
+        event.preventDefault();
+        setSidebarOpen(false);
+        setSettingsOpen(false);
+        setBookmarksOpen((open) => !open);
+        return;
+      }
+
+      // Ctrl/Cmd+Comma: open/close settings.
+      if (command && !event.altKey && !event.shiftKey && event.code === 'Comma') {
+        event.preventDefault();
+        setSidebarOpen(false);
+        setBookmarksOpen(false);
+        setSettingsOpen((open) => !open);
+        return;
+      }
+
+      // Alt+T: switch between light and dark appearance.
+      if (plainAlt && event.code === 'KeyT') {
+        event.preventDefault();
+        handleToggleTheme();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalShortcuts);
+    return () => window.removeEventListener('keydown', handleGlobalShortcuts);
+  }, [
+    viewPage, updateAvailable, dismissedUpdate, handleToggleTheme,
+  ]);
+
   // Keep the metadata paired with the data currently on screen while a different
   // surah is loading. The old reader remains usable until the new data is ready.
   const displayedSurahNumber = loadedSurahNumber ?? currentSurah;
@@ -305,6 +379,7 @@ export default function App() {
         onNavigateSurah={handleNavigateSurah}
         hasPrev={displayedSurahNumber !== null && displayedSurahNumber > 1}
         hasNext={displayedSurahNumber !== null && displayedSurahNumber < 114}
+        hasOpenOverlay={sidebarOpen || settingsOpen || bookmarksOpen || viewPage !== null || (updateAvailable && !dismissedUpdate)}
       />
 
       <SettingsPanel settings={settings} onChange={handleSettingsChange} isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />

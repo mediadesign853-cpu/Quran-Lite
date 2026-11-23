@@ -33,7 +33,7 @@ extraResources:
     to: portable-update-helper.ps1
 
 asar: true
-compression: normal
+compression: store
 electronLanguages: [en-US, ar, fa]
 
 win:
@@ -61,6 +61,7 @@ nsis:
 
 portable:
   artifactName: "${productName} Portable ${version}.${ext}"
+  useZip: true
 
 # Public feed: installed NSIS clients check this feed automatically; they do not
 # need a GitHub account or to open the GitHub website.
@@ -68,4 +69,4 @@ publish:
   provider: github
   owner: mediadesign853-cpu
   repo: Quran-Lite
-  releaseType: release
+  releaseType: draft

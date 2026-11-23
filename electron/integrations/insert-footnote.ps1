@@ -14,8 +14,10 @@ $script:QuranUtf8 = New-Object System.Text.UTF8Encoding($false)
 [Console]::OutputEncoding = $script:QuranUtf8
 $OutputEncoding = $script:QuranUtf8
 
-function Write-Result([bool]$Ok, [string]$Message) {
-  $result = @{ ok = $Ok; message = $Message } | ConvertTo-Json -Compress
+function Write-Result([bool]$Ok, [string]$Message, [string]$Code = '') {
+  $result = @{ ok = $Ok; message = $Message }
+  if (-not [string]::IsNullOrWhiteSpace($Code)) { $result.code = $Code }
+  $result = $result | ConvertTo-Json -Compress
   [Console]::Out.WriteLine("QURAN_RESULT:$result")
 }
 
@@ -214,9 +216,9 @@ try {
   }
 
   if ($Target -eq 'word') {
-    # Word's version-independent ProgID is stable across Office releases. The registry scan
-    # also handles installations that expose only a versioned ProgID.
-    $word = Get-ComApplication -BaseProgId 'Word.Application' -ProcessName 'WINWORD' 
+    # Word exposes the current text container through StoryType:
+    # 1 = main document text, 2 = existing footnotes, 3 = endnotes.
+    $word = Get-ComApplication -BaseProgId 'Word.Application' -ProcessName 'WINWORD'
 
     if ($word.Documents.Count -lt 1) {
       throw 'افتح مستند وُرد أولاً'
@@ -229,16 +231,54 @@ try {
 
     $selection = $word.Selection
     $range = $selection.Range
-    $start = [int]$range.Start
+    $storyType = [int]$range.StoryType
 
-    # Replace selected text (if any), then add a native numbered footnote immediately after it.
-    $range.Text = $ayahText
-    $end = $start + $ayahText.Length
-    $footnoteRange = $document.Range($end, $end)
-    $null = $document.Footnotes.Add($footnoteRange, [Type]::Missing, $referenceText)
+    # A nested native footnote cannot be created in Word. Keep both the ayah and
+    # its address inside the current footnote as ordinary text instead.
+    if ($storyType -eq 2) {
+      $range.Text = "$ayahText $referenceText"
+      $word.Activate() | Out-Null
+      Write-Result $true 'تم إدراج الآية ومرجعها كنص داخل الهامش الموجود في Word' 'existing-footnote-text'
+      exit 0
+    }
+
+    # Native footnotes are only inserted from the main document story. Do not
+    # replace the user's selection in headers, endnotes, text boxes, or separators.
+    if ($storyType -ne 1) {
+      if ($storyType -eq 3) {
+        throw 'المؤشر داخل حاشية ختامية في Word. لإنشاء هامش جديد، ضعه في متن المستند.'
+      }
+      throw 'لإدراج هامش حقيقي في Word، ضع المؤشر داخل متن المستند أو داخل هامش موجود.'
+    }
+
+    $start = [int]$range.Start
+    $originalText = [string]$range.Text
+    $originalFootnoteCount = [int]$document.Footnotes.Count
+
+    try {
+      # Replace selected text (if any), then add a native numbered footnote immediately after it.
+      $range.Text = $ayahText
+      $end = $start + $ayahText.Length
+      $footnoteRange = $document.Range($end, $end)
+      $null = $document.Footnotes.Add($footnoteRange, [Type]::Missing, $referenceText)
+    }
+    catch {
+      # Avoid leaving an orphaned ayah in the document if Word rejects footnote creation.
+      try {
+        while ([int]$document.Footnotes.Count -gt $originalFootnoteCount) {
+          $document.Footnotes.Item([int]$document.Footnotes.Count).Delete()
+        }
+        $restoreRange = $document.Range($start, $start + $ayahText.Length)
+        $restoreRange.Text = $originalText
+      }
+      catch {
+        # Preserve the original automation error; rollback is best-effort only.
+      }
+      throw
+    }
 
     $word.Activate() | Out-Null
-    Write-Result $true 'تم إدراج الهامش في Word'
+    Write-Result $true 'تم إدراج الهامش في Word' 'native-footnote'
     exit 0
   }
 
@@ -246,68 +286,65 @@ try {
     $indesign = Get-ComApplication -BaseProgId 'InDesign.Application' -ProcessName 'InDesign'
 
     if ($indesign.Documents.Count -lt 1) {
-      throw ' افتح انديزاين أولاً'
+      throw 'افتح انديزاين أولاً'
     }
 
     $activeDocument = $indesign.ActiveDocument
     if ($null -eq $activeDocument) {
-      throw 'لم يتم النسخ حاول مرة أخرى'
+      throw 'لم يتم العثور على مستند InDesign مفتوح'
     }
 
-    # Execute ExtendScript inside the connected InDesign instance; no external plug-in is required.
+    # Use the packaged JSX file as the single source of truth for InDesign behavior.
+    # This keeps the source JSX and the code actually executed by PowerShell identical.
+    $jsxPath = Join-Path $PSScriptRoot 'insert-footnote.jsx'
+    if (-not (Test-Path -LiteralPath $jsxPath -PathType Leaf)) {
+      throw 'فایل اسکریپت داخلی InDesign در کنار فایل ارتباطی برنامه پیدا نشد.'
+    }
+
+    $jsx = [System.IO.File]::ReadAllText($jsxPath, [System.Text.Encoding]::UTF8)
+    if (-not $jsx.Contains('__QURAN_PAYLOAD_JSON__')) {
+      throw 'قالب اسکریپت InDesign معتبر نیست.'
+    }
+
     $payloadLiteral = $payloadJson
     $payloadLiteral = $payloadLiteral.Replace([string][char]0x2028, '\u2028').Replace([string][char]0x2029, '\u2029')
-    $jsx = @"
-var quranPayload = $payloadLiteral;
-app.doScript(function () {
-    if (app.documents.length < 1) {
-        throw new Error('لا يوجد مستند مفتوح في انديزاين');
+    $jsx = $jsx.Replace('__QURAN_PAYLOAD_JSON__', $payloadLiteral)
+
+    $indesignResult = [string]$indesign.DoScript([string]$jsx, 1246973031)
+    switch ($indesignResult.Trim()) {
+      'QURAN_OK_EXISTING_FOOTNOTE' {
+        Write-Result $true 'تم إدراج الآية ومرجعها كنص داخل الهامش الموجود في InDesign' 'existing-footnote-text'
+        exit 0
+      }
+      'QURAN_OK_NATIVE_FOOTNOTE' {
+        Write-Result $true 'تم إدراج الهامش في InDesign' 'native-footnote'
+        exit 0
+      }
+      'QURAN_ERROR|NO_DOCUMENT' {
+        Write-Result $false 'لم يتم العثور على مستند InDesign مفتوح'
+        exit 0
+      }
+      'QURAN_ERROR|NO_SELECTION' {
+        Write-Result $false 'ضع مؤشر الكتابة داخل إطار نص أو هامش موجود في InDesign أولاً'
+        exit 0
+      }
+      'QURAN_ERROR|TEXT_REQUIRED' {
+        Write-Result $false 'الموضع المحدد ليس نصاً قابلاً للتحرير في InDesign'
+        exit 0
+      }
+      'QURAN_ERROR|FOOTNOTE_WRITE_FAILED' {
+        Write-Result $false 'تعذّر إدراج النص داخل الهامش الموجود في InDesign'
+        exit 0
+      }
+      'QURAN_ERROR|STORY_INVALID' {
+        Write-Result $false 'تعذّر تحديد موضع صالح لإدراج النص في InDesign'
+        exit 0
+      }
+      default {
+        Write-Result $false 'تعذّر إدراج الآية والهامش في InDesign. تحقق من إطار النص وموضع المؤشر.'
+        exit 0
+      }
     }
-    if (!app.selection || app.selection.length < 1) {
-        throw new Error('في انديزاين غير محدد النص');
-    }
-
-    var target = app.selection[0];
-    var story = null;
-    var startIndex = -1;
-    var targetType = '';
-    try { targetType = target && target.constructor ? target.constructor.name : ''; } catch (_) {}
-
-    var isInsertionPoint = targetType === 'InsertionPoint';
-    if (!isInsertionPoint) {
-        try { isInsertionPoint = !!(target && target.parentStory && typeof target.index === 'number'); } catch (_) {}
-    }
-
-    var isTextRange = targetType === 'Text' || targetType === 'TextStyleRange' || targetType === 'Word' || targetType === 'Character';
-    if (!isTextRange) {
-        try { isTextRange = !!(target && target.parentStory && target.insertionPoints && target.insertionPoints.length > 0); } catch (_) {}
-    }
-
-    if (isInsertionPoint) {
-        story = target.parentStory;
-        startIndex = target.index;
-        target.contents = quranPayload.text;
-    } else if (isTextRange) {
-        story = target.parentStory;
-        startIndex = target.insertionPoints[0].index;
-        target.contents = quranPayload.text;
-    } else {
-        throw new Error('ليس نصاً قابلاً للتحرير');
-    }
-
-    if (!story || startIndex < 0) {
-        throw new Error('تعذّر تحديد موضع إدراج النص في انديزاين');
-    }
-
-    var endPoint = story.insertionPoints.item(startIndex + quranPayload.text.length);
-    var footnote = endPoint.footnotes.add();
-    footnote.insertionPoints[-1].contents = quranPayload.reference;
-}, ScriptLanguage.JAVASCRIPT, undefined, UndoModes.ENTIRE_SCRIPT, 'Insert Quran footnote');
-"@
-
-    $null = $indesign.DoScript([string]$jsx, 1246973031)
-    Write-Result $true 'تم إدراج الهامش في انديزاين'
-    exit 0
   }
   throw 'التطبيق المستهدف غير مدعوم'
 }

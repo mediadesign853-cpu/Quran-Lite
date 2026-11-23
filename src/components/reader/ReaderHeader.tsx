@@ -1,6 +1,7 @@
 ﻿import {
   Bookmark,
   FileImage,
+  Keyboard,
   Menu,
   Moon,
   Settings,
@@ -21,6 +22,7 @@ interface ReaderHeaderProps {
   onOpenBookmarks: () => void;
   onToggleTheme: () => void;
   onOpenSettings: () => void;
+  onOpenKeyboardHelp: () => void;
   onNavigateSurah: (
     surahNumber: number,
     ayahNumber?: number,
@@ -40,6 +42,7 @@ export default function ReaderHeader({
   onOpenBookmarks,
   onToggleTheme,
   onOpenSettings,
+  onOpenKeyboardHelp,
   onNavigateSurah,
 }: ReaderHeaderProps) {
   const isPersian = settings.language === 'fa';
@@ -60,7 +63,7 @@ export default function ReaderHeader({
           </button>
 
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg--(--accent)/10 sm:h-8 sm:w-8">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-(--accent)/10 sm:h-8 sm:w-8">
               <span className="text-xs font-bold text-(--accent) md:text-sm">
                 {surahMeta.number}
               </span>
@@ -123,6 +126,16 @@ export default function ReaderHeader({
             ) : (
               <Moon className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenKeyboardHelp}
+            className="tooltip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth hover:bg-(--border-light) sm:h-9 sm:w-9"
+            data-tooltip="اختصارات لوحة المفاتيح"
+            aria-label="اختصارات لوحة المفاتيح"
+          >
+            <Keyboard className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
           </button>
 
           <button

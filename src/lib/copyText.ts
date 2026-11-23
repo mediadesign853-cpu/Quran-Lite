@@ -33,6 +33,7 @@ export function wrapAyahText(text: string, style: CopyAyahBracketStyle = 'none')
  */
 export function cleanSurahName(name: string): string {
   return name
+    .normalize('NFC') // Preserve composed letters such as آ before removing combining Quranic marks.
     .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]/gu, '') //Quran Marks 
     .replace(/[\u0640]/gu, '')
     .replace(/\u0671/gu, '\u0627') // alif wasla -> alif
@@ -131,6 +132,8 @@ function getFootnoteMessages(language: string) {
       webUnavailable: 'در نسخهٔ وب پاورقی واقعی ایجاد نمی‌شود؛ متن آیه و نشانی آن کپی شد. برای درج پاورقی از نسخهٔ دسکتاپ استفاده کنید',
       wordSuccess: 'آیه و پاورقی در Word درج شدند',
       indesignSuccess: 'آیه و پاورقی در انديزاين درج شدند',
+      wordExistingFootnoteSuccess: 'متن آیه و مرجع آن در هامش موجود Word درج شدند',
+      indesignExistingFootnoteSuccess: 'متن آیه و مرجع آن در هامش موجود InDesign درج شدند',
       insertFailed: 'درج پاورقی ناموفق بود',
       fallbackCopied: 'آیه و نشانی آن به‌صورت متن عادی کپی شدند',
       connectionFailed: 'اتصال به نرم‌افزار برقرار نشد',
@@ -142,6 +145,8 @@ function getFootnoteMessages(language: string) {
     webUnavailable: 'لا يمكن إنشاء هامش حقيقية في إصدار الويب؛ تم نسخ الآية ومرجعها. استخدم إصدار Windows لإدراج الهامش',
     wordSuccess: 'تم إدراج الآية والهامش في Word',
     indesignSuccess: 'تم إدراج الآية والهامش في انديزاين',
+    wordExistingFootnoteSuccess: 'تم إدراج نص الآية ومرجعها داخل الهامش الموجود في Word',
+    indesignExistingFootnoteSuccess: 'تم إدراج نص الآية ومرجعها داخل الهامش الموجود في InDesign',
     insertFailed: 'فشل إدراج الهامش',
     fallbackCopied: '(تم النسخ كنص عادي)',
     connectionFailed: 'تعذّر الاتصال بالتطبيق',
@@ -150,8 +155,8 @@ function getFootnoteMessages(language: string) {
 }
 
 /**
- * Performs the configured copy operation. Native Word/InDesign footnotes are inserted
- * by the Electron main process through the target application's own automation API.
+ * Performs the configured copy operation. New Word/InDesign footnotes are inserted
+ * through the target application's automation API; existing footnotes receive inline text.
  */
 export async function copyAyahPayload(
   payload: AyahCopyPayload,
@@ -188,10 +193,11 @@ export async function copyAyahPayload(
 
     });
     if (result.ok) {
-      reportFootnoteStatus(
-        target === 'word' ? messages.wordSuccess : messages.indesignSuccess,
-        true
-      );
+      const insertedIntoExistingFootnote = result.code === 'existing-footnote-text';
+      const successMessage = target === 'word'
+        ? (insertedIntoExistingFootnote ? messages.wordExistingFootnoteSuccess : messages.wordSuccess)
+        : (insertedIntoExistingFootnote ? messages.indesignExistingFootnoteSuccess : messages.indesignSuccess);
+      reportFootnoteStatus(successMessage, true);
       return { ok: true, insertedAsFootnote: true };
     }
 

@@ -1,0 +1,351 @@
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -305,6 +305,7 @@
+         onNavigateSurah={handleNavigateSurah}
+         hasPrev={displayedSurahNumber !== null && displayedSurahNumber > 1}
+         hasNext={displayedSurahNumber !== null && displayedSurahNumber < 114}
++        hasOpenOverlay={sidebarOpen || settingsOpen || bookmarksOpen || viewPage !== null || (updateAvailable && !dismissedUpdate)}
+       />
+ 
+       <SettingsPanel settings={settings} onChange={handleSettingsChange} isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+--- a/src/components/AyahRow.tsx
++++ b/src/components/AyahRow.tsx
+@@ -1,4 +1,4 @@
+-﻿import { memo, useState, useCallback } from 'react';
++﻿import { memo, useState, useCallback, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
+ import { Copy, Check, Bookmark, BookmarkCheck, Eye, FileImage } from 'lucide-react';
+ import type { SurahEdition, AppSettings } from '@/types/quran';
+ import { getAyahText, getHighlightedSegments } from '@/lib/quranData';
+@@ -65,13 +65,28 @@
+     toggleBookmark({ surahNumber, ayahNumber });
+   }, [surahNumber, ayahNumber]);
+ 
+-  const handleRowClick = useCallback(() => {
++  const handleRowClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+     // Keep native mouse text selection intact. Row selection is only used
+     // when the click did not leave a text range selected.
+     const textSelection = window.getSelection();
+     if (textSelection && !textSelection.isCollapsed && textSelection.toString().trim()) {
+       return;
+     }
++    event.currentTarget.focus({ preventScroll: true });
++    onToggleSelect(ayahNumber);
++  }, [ayahNumber, onToggleSelect]);
++
++  const handleRowKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
++    // S toggles only the focused ayah row. Do not intercept modified keys,
++    // controls inside the row, or typing in editable fields.
++    if (
++      event.target !== event.currentTarget ||
++      (event.code !== 'KeyS' && event.key.toLowerCase() !== 's') ||
++      event.ctrlKey || event.metaKey || event.altKey || event.shiftKey ||
++      event.repeat
++    ) return;
++
++    event.preventDefault();
+     onToggleSelect(ayahNumber);
+   }, [ayahNumber, onToggleSelect]);
+ 
+@@ -87,9 +102,18 @@
+ 
+   return (
+     <div
++      role="group"
++      tabIndex={isTarget || ayahNumber === 1 ? 0 : -1}
++      aria-roledescription={settings.language === 'fa' ? 'آیه' : 'آية'}
++      aria-label={settings.language === 'fa'
++        ? `آیه ${ayahNumber}${selected ? '، انتخاب‌شده' : ''}`
++        : `الآية ${ayahNumber}${selected ? '، محددة' : ''}`}
++      aria-keyshortcuts="S"
+       onClick={handleRowClick}
++      onKeyDown={handleRowKeyDown}
+       data-ayah-row={ayahNumber}
+-      className={`group cursor-pointer rounded-xl transition-colors duration-200 ${isTarget
++      data-selected={selected ? 'true' : 'false'}
++      className={`group cursor-pointer rounded-xl transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 ${isTarget
+         ? 'bg-amber-100/60 dark:bg-amber-900/20 ring-2 ring-amber-400/50'
+         : selected
+           ? 'bg-(--accent)/8 ring-1 ring-(--accent)/20'
+--- a/src/components/Reader.tsx
++++ b/src/components/Reader.tsx
+@@ -1,9 +1,10 @@
+-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
++import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+ 
+ import type { SurahMeta, SurahEdition, AppSettings } from '@/types/quran';
+ import AyahList from '@/components/reader/AyahList';
+ import { useReaderContextMenu } from '@/components/reader/hooks/useReaderContextMenu';
+ import ReaderHeader from '@/components/reader/ReaderHeader';
++import KeyboardShortcutsHelp from '@/components/KeyboardShortcutsHelp';
+ import ReaderFooter from '@/components/reader/ReaderFooter';
+ import { ReaderErrorState, ReaderLoadingState } from '@/components/reader/ReaderStates';
+ import ContextMenu from '@/components/ContextMenu';
+@@ -38,6 +39,7 @@
+   ) => void;
+   hasPrev: boolean;
+   hasNext: boolean;
++  hasOpenOverlay: boolean;
+ }
+ 
+ export default function Reader({
+@@ -60,11 +62,13 @@
+   onNavigateSurah,
+   hasPrev,
+   hasNext,
++  hasOpenOverlay,
+ }: ReaderProps) {
+   const scrollRef = useRef<HTMLDivElement>(null);
+   const scrollFrameRef = useRef<number | null>(null);
+   const [selectionCopy, setSelectionCopy] = useState<{ payload: ReturnType<typeof selectionCopyPayload>; count: number } | null>(null);
+   const [selectedAyahs, setSelectedAyahs] = useState<Set<number>>(() => new Set());
++  const [keyboardHelpOpen, setKeyboardHelpOpen] = useState(false);
+   const ayahRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+ 
+   // Page images
+@@ -81,6 +85,29 @@
+       return next;
+     });
+   }, []);
++
++  const clearReaderSelection = useCallback((clearNativeText = false) => {
++    setSelectedAyahs(new Set());
++    setSelectionCopy(null);
++
++    if (clearNativeText) {
++      const selection = window.getSelection();
++      const root = scrollRef.current;
++      const anchorInside = Boolean(root && selection?.anchorNode && root.contains(selection.anchorNode));
++      const focusInside = Boolean(root && selection?.focusNode && root.contains(selection.focusNode));
++      if (selection && !selection.isCollapsed && (anchorInside || focusInside)) {
++        selection.removeAllRanges();
++      }
++    }
++  }, []);
++
++  const handleReaderAreaClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
++    const target = event.target;
++    if (target instanceof Element && target.closest('[data-ayah-row]')) return;
++    // A click on the empty reader canvas clears whole-ayah selection only.
++    // Native text selection is left to the browser's normal mouse behavior.
++    clearReaderSelection();
++  }, [clearReaderSelection]);
+ 
+   // Build the same copy payload used by text-range selection, but from whole clicked ayahs.
+   const clickedAyahCopy = useMemo(() => {
+@@ -257,6 +284,46 @@
+     surahData,
+     settings,
+   });
++
++  // Escape closes the reader context menu first, then clears ayah/text selection.
++  // Other open application panels keep their existing Escape behavior.
++  useEffect(() => {
++    const handleReaderEscape = (event: KeyboardEvent) => {
++      if (event.key !== 'Escape' || hasOpenOverlay || keyboardHelpOpen) return;
++
++      const target = event.target;
++      if (target instanceof HTMLElement && (
++        target.matches('input, textarea, select') || target.isContentEditable
++      )) return;
++
++      if (menu) {
++        event.preventDefault();
++        event.stopPropagation();
++        closeMenu();
++        return;
++      }
++
++      const selection = window.getSelection();
++      const root = scrollRef.current;
++      const anchorInside = Boolean(root && selection?.anchorNode && root.contains(selection.anchorNode));
++      const focusInside = Boolean(root && selection?.focusNode && root.contains(selection.focusNode));
++      const hasReaderTextSelection = Boolean(
++        selection && !selection.isCollapsed && (anchorInside || focusInside)
++      );
++
++      if (selectedAyahs.size === 0 && !selectionCopy && !hasReaderTextSelection) return;
++
++      event.preventDefault();
++      event.stopPropagation();
++      clearReaderSelection(true);
++    };
++
++    document.addEventListener('keydown', handleReaderEscape);
++    return () => document.removeEventListener('keydown', handleReaderEscape);
++  }, [
++    hasOpenOverlay, keyboardHelpOpen, menu, closeMenu, selectedAyahs.size,
++    selectionCopy, clearReaderSelection,
++  ]);
+ 
+   // Save last read position while scrolling
+   const activeSurahNumber = surahMeta?.number;
+@@ -384,6 +451,7 @@
+         onOpenBookmarks={onOpenBookmarks}
+         onToggleTheme={onToggleTheme}
+         onOpenSettings={onOpenSettings}
++        onOpenKeyboardHelp={() => setKeyboardHelpOpen(true)}
+         onNavigateSurah={onNavigateSurah}
+       />
+ 
+@@ -418,6 +486,7 @@
+         ref={scrollRef}
+         onContextMenu={handleContextMenu}
+         onScroll={handleReaderScroll}
++        onClick={handleReaderAreaClick}
+         onMouseUp={updateMultiAyahSelection}
+         onKeyUp={updateMultiAyahSelection}
+         className="flex-1 min-h-0 overflow-y-auto pb-24 sm:pb-28"
+@@ -484,6 +553,10 @@
+         />
+       )}
+ 
++      {keyboardHelpOpen && (
++        <KeyboardShortcutsHelp onClose={() => setKeyboardHelpOpen(false)} />
++      )}
++
+     </div>
+   );
+ }
+--- a/src/components/reader/ReaderHeader.tsx
++++ b/src/components/reader/ReaderHeader.tsx
+@@ -1,6 +1,7 @@
+ ﻿import {
+   Bookmark,
+   FileImage,
++  Keyboard,
+   Menu,
+   Moon,
+   Settings,
+@@ -21,6 +22,7 @@
+   onOpenBookmarks: () => void;
+   onToggleTheme: () => void;
+   onOpenSettings: () => void;
++  onOpenKeyboardHelp: () => void;
+   onNavigateSurah: (
+     surahNumber: number,
+     ayahNumber?: number,
+@@ -40,6 +42,7 @@
+   onOpenBookmarks,
+   onToggleTheme,
+   onOpenSettings,
++  onOpenKeyboardHelp,
+   onNavigateSurah,
+ }: ReaderHeaderProps) {
+   const isPersian = settings.language === 'fa';
+@@ -127,6 +130,16 @@
+ 
+           <button
+             type="button"
++            onClick={onOpenKeyboardHelp}
++            className="tooltip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth hover:bg-(--border-light) sm:h-9 sm:w-9"
++            data-tooltip="اختصارات لوحة المفاتيح"
++            aria-label="اختصارات لوحة المفاتيح"
++          >
++            <Keyboard className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
++          </button>
++
++          <button
++            type="button"
+             onClick={onOpenSettings}
+             className="tooltip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth hover:bg-(--border-light) sm:h-9 sm:w-9"
+             data-tooltip={isPersian ? 'تنظیمات' : 'الإعدادات'}
+--- a/src/components/KeyboardShortcutsHelp.tsx
++++ b/src/components/KeyboardShortcutsHelp.tsx
+@@ -0,0 +1,97 @@
++import { useEffect, useRef } from 'react';
++import { X } from 'lucide-react';
++import { trapFocus } from '@/lib/focusTrap';
++
++interface KeyboardShortcutsHelpProps {
++  onClose: () => void;
++}
++
++const shortcuts = [
++  { keys: ['S'], action: 'تحديد الآية المركّز عليها أو إلغاء تحديدها' },
++  { keys: ['Esc'], action: 'إغلاق النافذة المفتوحة أو إلغاء تحديد الآيات' },
++  { keys: ['Shift', '↑ / ↓'], action: 'توسيع التحديد إلى الآيات المتجاورة' },
++  { keys: ['Ctrl', 'Shift', '↑ / ↓'], action: 'توسيع التحديد عبر عدة آيات' },
++  { keys: ['Ctrl', 'C'], action: 'نسخ الآيات المحددة' },
++];
++
++export default function KeyboardShortcutsHelp({ onClose }: KeyboardShortcutsHelpProps) {
++  const dialogRef = useRef<HTMLDivElement>(null);
++  const closeButtonRef = useRef<HTMLButtonElement>(null);
++
++  useEffect(() => {
++    const dialog = dialogRef.current;
++    if (!dialog) return;
++    const releaseFocus = trapFocus(dialog, closeButtonRef.current);
++    return releaseFocus;
++  }, []);
++
++  return (
++    <div
++      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-4"
++      onClick={onClose}
++      onKeyDown={(event) => {
++        if (event.key === 'Escape') {
++          event.preventDefault();
++          event.stopPropagation();
++          onClose();
++        }
++      }}
++    >
++      <div
++        ref={dialogRef}
++        role="dialog"
++        aria-modal="true"
++        aria-labelledby="keyboard-shortcuts-title"
++        tabIndex={-1}
++        dir="rtl"
++        onClick={(event) => event.stopPropagation()}
++        className="w-full max-w-lg overflow-hidden rounded-2xl border border-(--border) bg-(--bg-card) text-(--text-primary) shadow-2xl"
++      >
++        <div className="flex items-center justify-between border-b border-(--border) px-4 py-3">
++          <h2 id="keyboard-shortcuts-title" className="text-base font-semibold">
++            اختصارات لوحة المفاتيح
++          </h2>
++          <button
++            ref={closeButtonRef}
++            type="button"
++            onClick={onClose}
++            aria-label="إغلاق"
++            className="rounded-lg p-2 hover:bg-(--bg-secondary) focus-visible:outline-2 focus-visible:outline-(--accent)"
++          >
++            <X className="h-4 w-4" />
++          </button>
++        </div>
++
++        <div className="p-4">
++          <table className="w-full border-collapse text-sm">
++            <thead>
++              <tr className="border-b border-(--border) text-right text-(--text-secondary)">
++                <th scope="col" className="px-2 py-2 font-medium">المفتاح</th>
++                <th scope="col" className="px-2 py-2 font-medium">الوظيفة</th>
++              </tr>
++            </thead>
++            <tbody>
++              {shortcuts.map((shortcut) => (
++                <tr key={shortcut.keys.join('-')} className="border-b border-(--border) last:border-0">
++                  <td className="whitespace-nowrap px-2 py-3">
++                    <span className="inline-flex flex-wrap items-center gap-1" dir="ltr">
++                      {shortcut.keys.map((key, index) => (
++                        <span key={`${key}-${index}`} className="inline-flex items-center gap-1">
++                          {index > 0 && <span className="text-(--text-secondary)">+</span>}
++                          <kbd className="rounded-md border border-(--border) bg-(--bg-secondary) px-2 py-1 font-mono text-xs">
++                            {key}
++                          </kbd>
++                        </span>
++                      ))}
++                    </span>
++                  </td>
++                  <td className="px-2 py-3 leading-6">{shortcut.action}</td>
++                </tr>
++              ))}
++            </tbody>
++          </table>
++        </div>
++      </div>
++    </div>
++  );
++}

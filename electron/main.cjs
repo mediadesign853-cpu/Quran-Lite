@@ -1,6 +1,6 @@
 // Desktop shell (Electron). The web app (electron/dist, made by `npm run prepare:electron`) is served
 // through the private address app://quran/, so it runs from files, without a server and without internet.
-const { app, BrowserWindow, Menu, shell, protocol, ipcMain, clipboard, session } = require('electron');
+const { app, BrowserWindow, Menu, shell, protocol, ipcMain, session } = require('electron');
 const { isInternalAppUrl, allowPermissionRequest, allowPermissionCheck } = require('./security.cjs');
 const { createAppProtocolHandler, createPageProtocolHandler } = require('./protocol-handlers.cjs');
 
@@ -67,7 +67,7 @@ function writeFootnoteLog(level, details) {
   }
 }
 
-/** Insert an ayah and its address as a native Word/InDesign footnote (Windows desktop only). */
+/** Insert an ayah with a native footnote, or as inline text when already inside a footnote. */
 async function insertNativeFootnote(target, payload) {
   if (process.platform !== 'win32') {
     return Promise.resolve({ ok: false, message: 'درج خودکار پاورقی فقط در نسخه دسکتاپ ویندوز پشتیبانی می‌شود.' });
@@ -76,18 +76,6 @@ async function insertNativeFootnote(target, payload) {
   if (!fs.existsSync(FOOTNOTE_SCRIPT)) {
     writeFootnoteLog('error', { target, reason: 'script-not-found', script: FOOTNOTE_SCRIPT, resourcesPath: process.resourcesPath });
     return Promise.resolve({ ok: false, message: 'فایل داخلی درج پاورقی در بسته برنامه پیدا نشد. احتمالاً فایل Portable ناقص ساخته شده است.' });
-  }
-
-  const fallbackText = payload.reference ? `${payload.text} ${payload.reference}` : payload.text;
-  try {
-    await clipboard.writeText(fallbackText);
-  } catch (error) {
-    // Native footnote insertion can still succeed even if the clipboard is unavailable.
-    writeFootnoteLog('warning', {
-      target,
-      reason: 'clipboard-write-failed',
-      message: error?.message || String(error),
-    });
   }
 
   let payloadPath;

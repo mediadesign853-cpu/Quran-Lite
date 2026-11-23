@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect, useMemo, useDeferredValue, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useState, useRef, useEffect, useMemo, useDeferredValue, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Search, X, Loader2, BookOpen, FileText, History, Trash2, AlertTriangle, Lightbulb } from 'lucide-react';
 import type { SurahMeta, Language } from '@/types/quran';
 import {
@@ -57,10 +57,26 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     index: number;
   }>({ query: '', tab: 'all', index: -1 });
   const history = useHistory();
+  const [activeHistoryIndexState, setActiveHistoryIndex] = useState(-1);
+  const activeHistoryIndex = activeHistoryIndexState >= 0 && activeHistoryIndexState < history.length
+    ? activeHistoryIndexState
+    : -1;
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsListRef = useRef<HTMLDivElement>(null);
+  const historyListRef = useRef<HTMLDivElement>(null);
   const deferredQuery = useDeferredValue(query);
+
+  // Receive the app-level Ctrl/Cmd+F shortcut without coupling App to this input.
+  useEffect(() => {
+    const focusSearch = () => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+      setShowResults(true);
+    };
+    window.addEventListener('quran:focus-search', focusSearch);
+    return () => window.removeEventListener('quran:focus-search', focusSearch);
+  }, []);
 
   // The index is one small file: load it right away so the first search is instant too.
   useEffect(() => {
@@ -162,6 +178,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
   const handleChange = (value: string) => {
     setQuery(value);
     setActiveResultIndex(-1);
+    setActiveHistoryIndex(-1);
     setShowResults(true);
   };
 
@@ -169,6 +186,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     setQuery('');
     setShowResults(false);
     setActiveResultIndex(-1);
+    setActiveHistoryIndex(-1);
     inputRef.current?.focus();
   };
 
@@ -182,6 +200,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
   const handleHistoryClick = (surah: number, ayah: number, historyQuery: string) => {
     onNavigateSurah(surah, ayah, historyQuery, false);
     setShowResults(false);
+    setActiveHistoryIndex(-1);
   };
 
   const surahResults = results.filter((r): r is SurahSearchResult => r.type === 'surah');
@@ -224,16 +243,37 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     activeItem?.scrollIntoView({ block: 'nearest' });
   }, [activeResultIndex, filteredResults.length, query, showResults]);
 
+  useEffect(() => {
+    if (!showResults || query.trim() || activeHistoryIndex < 0) return;
+    const activeItem = historyListRef.current?.querySelector<HTMLElement>(
+      `[data-history-index="${activeHistoryIndex}"]`
+    );
+    activeItem?.scrollIntoView({ block: 'nearest' });
+  }, [activeHistoryIndex, history.length, query, showResults]);
+
   const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape') {
       if (showResults) {
         event.preventDefault();
         setShowResults(false);
+        setActiveHistoryIndex(-1);
       }
       return;
     }
 
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      // With an empty query, the same arrows navigate the recent-search history.
+      if (!query.trim() && history.length > 0) {
+        event.preventDefault();
+        const direction = event.key === 'ArrowDown' ? 1 : -1;
+        setShowResults(true);
+        setActiveHistoryIndex((current) => {
+          if (!showResults || current < 0) return direction > 0 ? 0 : history.length - 1;
+          return (current + direction + history.length) % history.length;
+        });
+        return;
+      }
+
       if (filteredResults.length === 0) return;
       event.preventDefault();
       const wasOpen = showResults;
@@ -246,11 +286,22 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
       return;
     }
 
-    if (event.key === 'Enter' && showResults && query.trim()) {
-      const activeResult = filteredResults[activeResultIndex >= 0 ? activeResultIndex : 0];
-      if (activeResult) {
-        event.preventDefault();
-        handleResultClick(activeResult);
+    if (event.key === 'Enter' && showResults) {
+      if (!query.trim() && history.length > 0) {
+        const historyEntry = history[activeHistoryIndex >= 0 ? activeHistoryIndex : 0];
+        if (historyEntry) {
+          event.preventDefault();
+          handleHistoryClick(historyEntry.surah, historyEntry.ayah, historyEntry.query);
+        }
+        return;
+      }
+
+      if (query.trim()) {
+        const activeResult = filteredResults[activeResultIndex >= 0 ? activeResultIndex : 0];
+        if (activeResult) {
+          event.preventDefault();
+          handleResultClick(activeResult);
+        }
       }
     }
   };
@@ -274,6 +325,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
         <input
           ref={inputRef}
           type="text"
+          data-quran-search=""
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleInputKeyDown}
@@ -305,36 +357,44 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
               {t ? 'تاریخچهٔ جستجو' : 'سجل البحث'}
             </span>
             <button
-              onClick={clearHistory}
+              onClick={() => { clearHistory(); setActiveHistoryIndex(-1); }}
               className="flex items-center gap-1 text-xs text-(--text-secondary) hover:text-red-600 transition-smooth"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {t ? 'حذف همه' : 'حذف الكل'}
             </button>
           </div>
-          <div className="overflow-y-auto flex-1">
-            {history.map((entry) => (
-              <div key={`${entry.surah}:${entry.ayah}`} className="flex items-stretch border-b border-(--border-light) hover:bg-(--bg-secondary) transition-smooth">
-                <button
-                  onClick={() => handleHistoryClick(entry.surah, entry.ayah, entry.query)}
-                  className="flex-1 min-w-0 px-4 py-2.5 text-right"
+          <div ref={historyListRef} className="overflow-y-auto flex-1">
+            {history.map((entry, historyIndex) => {
+              const isActive = historyIndex === activeHistoryIndex;
+              return (
+                <div
+                  key={`${entry.surah}:${entry.ayah}`}
+                  className={`flex items-stretch border-b border-(--border-light) transition-colors ${isActive ? 'bg-(--bg-secondary) ring-1 ring-inset ring-(--accent)/35' : 'hover:bg-(--bg-secondary)'}`}
                 >
-                  <div className="text-xs text-(--text-secondary) mb-0.5">
-                    {surahs[entry.surah - 1]?.name} Â· {entry.surah}:{entry.ayah}
-                  </div>
-                  <p className="font-quran text-sm text-(--text-primary) truncate" dir="rtl">
-                    {index?.texts[entry.surah - 1]?.[entry.ayah - 1] ?? entry.query}
-                  </p>
-                </button>
-                <button
-                  onClick={() => removeHistory(entry.surah, entry.ayah)}
-                  aria-label={t ? 'حذف از تاریخچه' : 'حذف من السجل'}
-                  className="px-3 text-(--text-secondary) hover:text-red-600 transition-smooth"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+                  <button
+                    data-history-index={historyIndex}
+                    aria-current={isActive ? 'true' : undefined}
+                    onClick={() => handleHistoryClick(entry.surah, entry.ayah, entry.query)}
+                    className="flex-1 min-w-0 px-4 py-2.5 text-right focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-(--accent)"
+                  >
+                    <div className="text-xs text-(--text-secondary) mb-0.5">
+                      {surahs[entry.surah - 1]?.name} · {entry.surah}:{entry.ayah}
+                    </div>
+                    <p className="font-quran text-sm text-(--text-primary) truncate" dir="rtl">
+                      {index?.texts[entry.surah - 1]?.[entry.ayah - 1] ?? entry.query}
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => removeHistory(entry.surah, entry.ayah)}
+                    aria-label={t ? 'حذف از تاریخچه' : 'حذف من السجل'}
+                    className="px-3 text-(--text-secondary) hover:text-red-600 transition-smooth focus-visible:outline-2 focus-visible:outline-(--accent)"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -445,7 +505,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
                   onClick={() => handleResultClick(result)}
                   className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-(--bg-secondary) transition-smooth text-right border-b border-(--border-light) ${activeClasses}`}
                 >
-                  <div className="w-9 h-9 rounded-lg bg--(--accent)/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-lg bg-(--accent)/10 flex items-center justify-center shrink-0 mt-0.5">
                     <FileText className="w-4 h-4 text-(--accent)" />
                   </div>
                   <div className="flex-1 min-w-0">

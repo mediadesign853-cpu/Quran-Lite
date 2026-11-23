@@ -1,0 +1,31 @@
+Quran Reader - Stage 4
+Based on: Quran-Reader-Stage1-2-Fixed.zip
+
+Changes included
+1. Keyboard focus and selection for ayah rows:
+   - The first ayah (or a target ayah) is available as a keyboard tab stop.
+   - Clicking an ayah focuses its row, without changing the existing whole-row selection toggle.
+   - Pressing S toggles selection for the focused ayah row.
+   - The existing copy/bookmark/page buttons remain separate controls.
+2. Escape behavior:
+   - Escape closes the reader context menu first.
+   - When no higher-level panel or overlay is open, Escape clears selected ayah boxes and native text selection within the reader.
+   - Existing App-level Escape behavior for the sidebar, settings, bookmarks and page viewer is preserved.
+3. Clicking blank space in the reader viewport clears whole-ayah box selection.
+   - Clicks inside ayah rows and their action buttons do not trigger the blank-space clear.
+   - The handler does not programmatically remove a native text range.
+4. Added a keyboard-shortcuts dialog opened from the reader header.
+   - The dialog contains only a short Arabic table of shortcuts.
+   - Arrow-key and Shift/Ctrl+Shift selection behaviors were not overridden.
+
+Validation performed
+- TypeScript/TSX syntax transpilation passed for all five changed/new files.
+- `npm run verify:data` passed: 114 surahs, 6236 ayahs, 0 translation/tafsir resources.
+- `node --test scripts/test-electron-security.cjs` passed: 9/9 tests.
+
+Validation limitations
+- Full typecheck, lint and production build were not run because node_modules is not present in the supplied ZIP. `npm ci` did not complete in this environment.
+- The ZIP does not contain the `tools/` folder required by the configured Python Quran text/reference tests, so those tests could not run.
+- Real keyboard interaction still needs to be checked in the running Windows/macOS app, especially the existing Shift+Arrow and Ctrl+Shift+Arrow selection behaviors, since these were deliberately not modified.
+
+No data files, Quran text, copy formatting rules, or native text-selection handlers were changed in this stage.
