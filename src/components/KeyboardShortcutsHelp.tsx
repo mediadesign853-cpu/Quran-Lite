@@ -72,7 +72,7 @@ export default function KeyboardShortcutsHelp({ onClose }: KeyboardShortcutsHelp
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-4"
+      className="fixed inset-0 z-90 flex items-center justify-center bg-black/55 p-4"
       onClick={onClose}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {

@@ -353,8 +353,8 @@ export default function Reader({
       if (isCommandKey && !event.shiftKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
         event.preventDefault();
         clearReaderSelection();
-        if (event.key === 'ArrowLeft' && hasPrev) onPrev();
-        if (event.key === 'ArrowRight' && hasNext) onNext();
+        if (event.key === 'ArrowRight' && hasPrev) onPrev();
+        if (event.key === 'ArrowLeft' && hasNext) onNext();
         return;
       }
 
