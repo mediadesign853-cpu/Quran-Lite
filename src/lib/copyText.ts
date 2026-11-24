@@ -63,7 +63,7 @@ export function formatAyahReference(surahName: string, ayahNumbers: number | num
   const numberText = isSingle
     ? String(numbers[0])
     : isRange
-      ? `${numbers[0]} – ${numbers[numbers.length - 1]}`
+      ? `${numbers[0]} - ${numbers[numbers.length - 1]}`
       : numbers.join('، ');
 
   return `سورة ${name}، ${isSingle ? 'الآية' : 'الآيات'} ${numberText}.`;
