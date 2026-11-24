@@ -1,125 +1,185 @@
-# Quran Reader Lite
+# 📖 Quran Reader Lite — Windows
 
-**Languages:** **English** | [فارسی](README.fa.md) | [العربية](README.ar.md)
+<p align="center">
+  <img src="docs/screenshots/app-icon.png" alt="Quran Reader Lite icon" width="120" />
+</p>
 
-Quran Reader Lite is a Windows desktop application for reading and searching the Arabic Quran offline. It is built with **Electron, React, and TypeScript**. The Lite edition contains the Arabic Quran text; translations and tafsir are not included.
+<p align="center">
+  🌐 Language: <strong>English</strong> · <a href="README.ar.md">العربية</a>
+</p>
+
+**Quran Reader Lite** is a lightweight, offline-first Quran reader for **Windows**. It ships the complete Arabic Quran text and deliberately leaves out translations and tafsir, so it starts quickly and needs no network connection for reading.
+
+> 🪟 This repository contains the **Windows** edition only.
 
 Quran text source: [Tanzil](https://tanzil.net) — CC BY 3.0.
 
-## Main Features
+---
 
-- Read and search the 114 surahs and their ayahs.
-- View the 604 Mushaf page images included with the current project build.
-- Save bookmarks, search history, and the last reading position.
-- Use the Arabic or Persian interface, light or dark theme, and adjust text size.
-- Copy ayahs with configurable ayah numbers, Quranic brackets, and references.
-- Insert real footnotes into Microsoft Word or Adobe InDesign on Windows.
-- Read and search offline; an internet connection is needed for updates.
-- Choose between a Windows installer (NSIS) and a Portable version.
-- Receive automatic updates, with a signed update process for the Portable version.
+## ⬇️ Download
 
-## Installation & Setup
+Download directly from the links below, or visit the [Releases page](https://github.com/mediadesign853-cpu/Quran-Lite/releases/latest).
 
-1. Open the [GitHub Releases page](https://github.com/mediadesign853-cpu/quran-lite/releases/latest).
-2. Download one of these files:
-   - **Quran Reader Lite Setup** — installs the application and creates shortcuts.
-   - **Quran Reader Lite Portable** — runs without installation.
-3. For the Portable version, keep the `Quran Reader Lite Data` folder beside the EXE. This folder contains the Portable version's settings, bookmarks, and history. Keep the folder writable so updates can replace the EXE safely.
+| 🪟 Latest release (v1.0.5) | File |
+|:---:|:---:|
+| 💽 Installer (NSIS) | [📥 Quran Reader Lite Setup 1.0.5.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.5/Quran-Reader-Lite-Setup-1.0.5.exe) |
+| ⚡ Portable | [📥 Quran Reader Lite Portable 1.0.5.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.5/Quran-Reader-Lite-Portable-1.0.5.exe) |
 
-**Word and InDesign:** Real footnote insertion is available in the Windows desktop application. It requires the target application (Word or InDesign) to be installed and Windows PowerShell 5.1. If insertion does not work, open the target application and try again.
+The **Portable** build runs without installation. Keep the `Quran Reader Lite Data` folder next to the EXE: it stores settings, bookmarks, and history, and it must stay writable so automatic updates can replace the EXE.
 
-## Building & Releasing
+---
 
-### Requirements and local build
+## 📸 Screenshots
 
-Use **Node.js 22.13 or later** and npm 10 or later. Python 3 is also required for the Quran text regression tests. On Windows, run these commands from the project folder:
+Click any image to open it at full size.
+
+<p align="center">
+  <a href="docs/screenshots/Screenshot-1.png"><img src="docs/screenshots/Screenshot-1.png" alt="Quran Reader Lite — reader view" width="49%" /></a>
+  <a href="docs/screenshots/screenshot-2.png"><img src="docs/screenshots/screenshot-2.png" alt="Quran Reader Lite — surah list" width="49%" /></a>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/screenshot-3.png"><img src="docs/screenshots/screenshot-3.png" alt="Quran Reader Lite — search" width="49%" /></a>
+  <a href="docs/screenshots/screenshot-4.png"><img src="docs/screenshots/screenshot-4.png" alt="Quran Reader Lite — settings" width="49%" /></a>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/screenshot-5.png"><img src="docs/screenshots/screenshot-5.png" alt="Quran Reader Lite — bookmarks" width="49%" /></a>
+  <a href="docs/screenshots/screenshot-6.png"><img src="docs/screenshots/screenshot-6.png" alt="Quran Reader Lite — copying ayahs" width="49%" /></a>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/screenshot-7.png"><img src="docs/screenshots/screenshot-7.png" alt="Quran Reader Lite — dark theme" width="49%" /></a>
+  <a href="docs/screenshots/screenshot-8.png"><img src="docs/screenshots/screenshot-8.png" alt="Quran Reader Lite — reader detail" width="49%" /></a>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/screenshot-9.png"><img src="docs/screenshots/screenshot-9.png" alt="Quran Reader Lite — keyboard help" width="49%" /></a>
+</p>
+
+### 🕌 Mushaf page images
+
+<p align="center">
+  <img src="docs/screenshots/mushaf-page.webp" alt="A page from the Madinah Mushaf" width="420" />
+</p>
+
+All **604 pages** are bundled with the application. The ayah being read is highlighted on its page, and the page viewer supports zoom and previous/next navigation.
+
+---
+
+## ✨ Features
+
+- 📖 Read all 114 surahs with their ayahs and the Uthmani script preserved.
+- 🔎 Instant search across surah names and ayah text.
+- 🔖 Bookmarks, search history, and automatic resume from the last reading position.
+- 🎨 Arabic interface, with light, dark, and **follow the operating system** theme options, plus an adjustable Arabic font size.
+- 📋 Copy ayahs with configurable numbers, Quranic brackets, and references.
+- 🧾 Insert native footnotes into Microsoft Word or Adobe InDesign on Windows.
+- 🖼️ Browse the 604 bundled Mushaf page images.
+- 🔄 Automatic updates: `electron-updater` for the installer, and a signed, SHA-512-verified updater for the Portable build.
+- 🌐 Reading and searching work fully offline; an internet connection is only needed for updates.
+
+---
+
+## 🛠️ Setup and build (developers)
+
+### Requirements
+
+- **Node.js 22.13+** and **npm 10+**
+- **Python 3** for the Quran text regression tests
+- Windows for building the Windows packages
+
+Install and verify the project:
 
 ```powershell
-npm run refresh:dependencies
-# After the lockfile has been regenerated and committed, future clean installs use:
 npm ci
 npm run check
+```
+
+`npm run check` runs the data verification, Quran text and reference tests, Electron security tests, TypeScript type checking, ESLint, and the web build.
+
+Build both Windows x64 packages:
+
+```powershell
 npm run dist:win
 ```
 
-`npm run check` verifies the Quran data, TypeScript types, lint rules, and web build. `npm run dist:win` prepares the Electron app and creates both Windows x64 packages in `release/`:
+The files are written to `release/`:
 
 - `Quran Reader Lite Setup <version>.exe`
 - `Quran Reader Lite Portable <version>.exe`
 
-### Portable update keys and scripts
+If the lockfile needs to be regenerated first, run `npm run refresh:dependencies` once; commit the resulting `package-lock.json` before using `npm ci` in CI.
 
-The project uses three scripts for Portable updates:
+### 🔐 Portable update keys
 
 | Command | Purpose |
 | --- | --- |
-| `npm run generate:portable-keys` | Creates an Ed25519 key pair. Run it once when setting up the update system, not for every release. |
-| `npm run verify:portable-key` | Checks that the public key exists and is a valid Ed25519 key. |
-| `npm run create:portable-manifest` | Calculates the Portable EXE's SHA-512 hash and creates the signed `latest-portable.json` manifest. |
-
-The exact key-generation command in this project is **`generate:portable-keys`**; there is no `generate:portable` script in `package.json`.
+| `npm run generate:portable-keys` | Create a new Ed25519 key pair. Run once when setting up updates, **not** for every release. |
+| `npm run verify:portable-key` | Check that the public key is present and valid. |
+| `npm run create:portable-manifest` | Hash the Portable EXE and create the signed `latest-portable.json`. |
 
 Key files:
 
-- `electron/portable-update-public.pem` — public key; commit this file to the repository.
-- `.secrets/portable-update-private.pem` — private key; never commit or share this file.
+- `electron/portable-update-public.pem` — public key; keep it committed, because installed clients trust this exact key.
+- `.secrets/portable-update-private.pem` — private key; never commit or share it. Store its contents as the GitHub Actions secret `PORTABLE_UPDATE_PRIVATE_KEY`.
 
-Add the complete private key as a GitHub Actions repository secret named `PORTABLE_UPDATE_PRIVATE_KEY`. Keep a secure offline backup. Do not generate a new key for each release; existing installations trust the public key already included in the app.
+The manifest script signs the **GitHub asset name** (`Quran-Reader-Lite-Portable-<version>.exe`), which differs from the local build file name because electron-builder replaces spaces with hyphens when uploading assets. `PORTABLE_UPDATE_REPO` can override the repository path in the signed download URL when older clients expect different casing. Never generate a new key pair for an existing release chain: old installations would reject the new signature.
 
-The manifest script uses `PORTABLE_UPDATE_PRIVATE_KEY` and `GITHUB_REF_NAME`. The release workflow supplies these values automatically and runs the manifest script after the Portable EXE has been built.
+### 🤖 Releasing with GitHub Actions
 
-### GitHub Actions release
+The workflow `.github/workflows/release-windows.yml` runs **only when a tag starting with `v` is pushed**. Existing tags are never removed, so the update chain stays intact.
 
-The workflow is at `.github/workflows/release-windows.yml`. It runs **only when a version tag beginning with `v` is pushed**, for example `v1.0.1`.
-
-For each release:
-
-1. Change the version in `package.json` to the new release number (for example, `1.0.1`).
-2. Update the lockfile and run the checks:
-
-```powershell
-npm install --package-lock-only
-npm run check
-```
-
-3. Commit and push the release changes to `main`, then create and push a tag with the exact same version:
+1. Set the new version in `package.json` and `package-lock.json` (for example `1.0.5`).
+2. Regenerate the lockfile if dependencies changed, then run `npm run check`.
+3. Commit, push `main`, and push a matching tag:
 
 ```powershell
 git add package.json package-lock.json
-git commit -m "Release v1.0.1"
+git commit -m "Release v1.0.5"
 git push origin main
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.0.5
+git push origin v1.0.5
 ```
 
-GitHub Actions uses Windows, sets up Node.js 22, installs dependencies with `npm ci`, runs `npm run check`, and builds both NSIS and Portable packages. It then creates and uploads the signed Portable manifest. The Release is published only after the required files have been uploaded.
+The runner installs dependencies, runs the checks, builds both packages, creates the signed Portable manifest, uploads the assets, and publishes the release only after the update metadata is present. Required repository secret: `PORTABLE_UPDATE_PRIVATE_KEY`.
 
-Required repository secret: `PORTABLE_UPDATE_PRIVATE_KEY`. The workflow uses GitHub's `GITHUB_TOKEN` to upload release files.
+### 🔄 Update behaviour
 
-## Auto-Update Behavior
+- The packaged app checks for updates about 15 seconds after launch, then every 12 hours, and asks before installing.
+- **Installer:** `electron-updater` reads `latest.yml` from the GitHub release.
+- **Portable:** the app downloads `latest-portable.json`, verifies its Ed25519 signature, downloads the EXE, and checks its SHA-512 and size before a PowerShell helper replaces the old file. The previous EXE is kept until the new one starts successfully.
+- Portable updates need write access to the folder containing the EXE. If anything fails, the existing version is left untouched.
+- Older Portable releases used a different repository casing in their download URL; a signed manifest for each release must match the URL expected by that release's clients. The v1.0.4 release carries a corrected legacy manifest, and v1.0.5 restores the current casing.
 
-- The packaged Windows app checks for updates about 15 seconds after launch, then every 12 hours.
-- The app asks before downloading an update. It does not install an update without user approval.
-- **NSIS installation:** uses `electron-updater` and the `latest.yml` file published with the GitHub Release.
-- **Portable version:** downloads `latest-portable.json`, verifies its Ed25519 signature, then checks the downloaded EXE with SHA-512. A PowerShell helper replaces the EXE after the app closes. The previous EXE is kept until the new version starts successfully.
-- Updates need an internet connection. Portable updates also need write permission in the folder containing the EXE. If an update fails, the existing version is kept.
+---
 
-## Security Note
+## ⌨️ Keyboard shortcuts
 
-Ed25519 signature verification and SHA-512 checks protect the **Portable update process**. They are not the same as a Windows Authenticode publisher signature. The current Windows EXE files are not signed with an Authenticode certificate, so Windows SmartScreen may show an “Unknown publisher” warning. Download the application only from the official GitHub Releases page linked above.
+| Shortcut | Action |
+|---|---|
+| `S` | Select / deselect the focused ayah |
+| `↑ / ↓` | Move between ayahs, results, or surahs |
+| `Shift + ↑ / ↓` | Select adjacent ayahs |
+| `Ctrl + Shift + ↑ / ↓` | Extend the selection |
+| `Ctrl + ← / →` | Previous / next surah |
+| `Ctrl + Home / End` | First / last ayah |
+| `Ctrl + C` | Copy the selected ayahs |
+| `Esc` | Close a panel or clear the selection |
+| `Ctrl/Cmd + F` | Focus the search box |
+| `Alt + S` | Toggle the surah list |
+| `Alt + B` | Toggle bookmarks |
+| `Ctrl/Cmd + ,` | Toggle settings |
+| `Alt + T` | Toggle the theme |
+| `Alt + H` | Open the shortcut help |
+| `B` | Bookmark the focused ayah |
+| `M` | Open its Mushaf page |
+| `← / →` | Turn Mushaf pages in the page viewer |
 
+---
 
-## Electron security and permissions
-- Browser permissions are denied by default. Only sanitized clipboard writes from the trusted top-level `app://quran` renderer are allowed for the copy feature.
-- Clipboard reads, browser notifications, geolocation, camera, microphone, display capture, USB and HID permissions are denied. Update notifications use Electron's native main-process API.
-- The desktop CSP is scoped to `app://quran` and the `qpage://pages` resource host. Page images and `boxes.json` are served only from that internal host.
-- The hosted PWA uses a separate CSP that permits its same-origin service worker.
+## 🛡️ Security note
 
-## Refreshing dependencies
-Direct dependencies have been moved to maintained stable release lines. TypeScript is kept on 6.0.x because the current stable `typescript-eslint` release supports TypeScript `<6.1.0`; Vite 8 and ESLint 10 require a modern Node runtime. On Windows, run this once from PowerShell in the project folder to regenerate `package-lock.json`, install the packages, run the audit and tests, and rebuild the Electron assets:
+The Ed25519 signature and SHA-512 checks protect the **Portable update process**; they are not a Windows Authenticode publisher signature. The EXE files are not Authenticode-signed, so Windows SmartScreen may show an “Unknown publisher” warning. Download only from the [official Releases page](https://github.com/mediadesign853-cpu/Quran-Lite/releases/latest).
 
-```powershell
-npm run refresh:dependencies
-```
-
-Do not run `npm ci` until this refresh has completed successfully; the included lockfile could not be regenerated in this network-restricted build environment.
+Electron permissions are denied by default: clipboard reads, notifications, geolocation, camera, microphone, display capture, USB, and HID are blocked. Only sanitized clipboard writes from the trusted `app://quran` renderer are allowed for the copy feature. Page images are served from the internal `qpage://pages` host.

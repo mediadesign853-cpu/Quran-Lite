@@ -77,8 +77,11 @@ export function loadSettings(): AppSettings {
 
     const requestedFontSize = Number(parsed.fontSize);
     const settings: AppSettings = {
-      language: parsed.language === 'fa' ? 'fa' : 'ar',
-      theme: parsed.theme === 'dark' ? 'dark' : 'light',
+      // This edition ships with the Arabic interface only.
+      language: 'ar',
+      theme: parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'system'
+        ? parsed.theme
+        : DEFAULT_SETTINGS.theme,
       fontSize: Number.isFinite(requestedFontSize)
         ? Math.min(56, Math.max(16, Math.round(requestedFontSize / 2) * 2))
         : DEFAULT_SETTINGS.fontSize,

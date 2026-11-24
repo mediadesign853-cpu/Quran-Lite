@@ -17,6 +17,7 @@ import {
 import { recordAyahSearch, purgeLegacyStorage } from '@/lib/viewStats';
 import { addHistory } from '@/lib/history';
 import { getLastReadPosition, saveLastReadPosition } from '@/lib/lastRead';
+import { resolveTheme } from '@/lib/theme';
 import { useCopyStatus } from '@/app/hooks/useCopyStatus';
 import { useServiceWorkerUpdate } from '@/app/hooks/useServiceWorkerUpdate';
 
@@ -47,9 +48,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', settings.theme);
+    const applyTheme = () => {
+      document.documentElement.setAttribute('data-theme', resolveTheme(settings.theme));
+    };
+    applyTheme();
     document.documentElement.lang = settings.language;
     document.documentElement.dir = 'rtl';
+    if (settings.theme !== 'system') return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', applyTheme);
+    return () => media.removeEventListener('change', applyTheme);
   }, [settings.theme, settings.language]);
 
   // Load the surah catalogue independently so a failure can be retried without a page refresh.
@@ -185,7 +193,7 @@ export default function App() {
   }, []);
 
   const handleToggleTheme = useCallback(() => {
-    const theme: 'light' | 'dark' = settings.theme === 'light' ? 'dark' : 'light';
+    const theme: 'light' | 'dark' = resolveTheme(settings.theme) === 'light' ? 'dark' : 'light';
     const next = { ...settings, theme };
     setSettings(next);
     saveSettings(next);

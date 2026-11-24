@@ -13,7 +13,9 @@ async function main() {
   const tag = process.env.GITHUB_REF_NAME || `v${version}`;
   const privateKeyPem = process.env.PORTABLE_UPDATE_PRIVATE_KEY;
   const owner = 'mediadesign853-cpu';
-  const repo = 'Quran-Lite';
+  // Older Portable builds compare the download URL with their own hard-coded
+  // repository casing, so a release can override the path explicitly.
+  const repo = process.env.PORTABLE_UPDATE_REPO || 'Quran-Lite';
 
   if (!privateKeyPem || !privateKeyPem.includes('BEGIN PRIVATE KEY')) {
     throw new Error('PORTABLE_UPDATE_PRIVATE_KEY environment variable is missing or invalid.');
@@ -35,12 +37,15 @@ async function main() {
     throw new Error(`Expected exactly one Portable .exe in ${releaseDirectory}; found ${portableFiles.length}: ${portableFiles.join(', ')}`);
   }
 
-  const fileName = portableFiles[0];
-  if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]*\.exe$/i.test(fileName)) {
-    throw new Error(`Portable artifact has an unsafe file name: ${fileName}`);
+  const localFileName = portableFiles[0];
+  if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]*\.exe$/i.test(localFileName)) {
+    throw new Error(`Portable artifact has an unsafe file name: ${localFileName}`);
   }
 
-  const filePath = path.join(releaseDirectory, fileName);
+  // electron-builder uploads GitHub assets with spaces replaced by hyphens.
+  // The signed manifest must name the uploaded asset, not the local build file.
+  const fileName = localFileName.replace(/ /g, '-');
+  const filePath = path.join(releaseDirectory, localFileName);
   const stats = fs.statSync(filePath);
   const hash = crypto.createHash('sha512');
   for await (const chunk of createReadStream(filePath)) hash.update(chunk);

@@ -116,8 +116,8 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-30"
-          style={{ background: 'var(--overlay)' }}
+          className="fixed right-0 bottom-0 left-0 z-30"
+          style={{ top: 'var(--header-bottom, 0px)', background: 'var(--overlay)' }}
           onClick={onClose}
         />
       )}
@@ -129,10 +129,11 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
         aria-label={language === 'fa' ? 'فهرست سوره‌ها' : 'قائمة السور'}
         tabIndex={-1}
         onKeyDown={handleSidebarKeyDown}
-        className={`fixed top-0 right-0 h-full w-80 bg-(--bg-secondary)
+        className={`fixed right-0 bottom-0 w-80 bg-(--bg-secondary)
           border-l border-(--border) z-90  flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
         }`}
+        style={{ top: 'var(--header-bottom, 0px)' }}
       >
         <div className="p-4 border-b border-(--border)">
           <div className="flex items-center justify-between mb-3">

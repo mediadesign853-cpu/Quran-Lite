@@ -608,7 +608,7 @@ export default function Reader({
   }
 
   return (
-    <div className="relative flex-1 flex flex-col min-w-0 min-h-0 h-full mt-4">
+    <div className="relative flex-1 flex flex-col min-w-0 min-h-0 h-full">
 
       <ReaderHeader
         surahMeta={surahMeta}

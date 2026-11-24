@@ -41,7 +41,7 @@ export interface SurahEdition {
 }
 
 export type Language = 'ar' | 'fa';
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'system';
 /** How the ayah number is added when several ayahs are selected by hand and copied */
 export type CopyNumberStyle = 'plain' | 'brackets' | 'none';
 /** How the surah/ayah reference is placed when copied */

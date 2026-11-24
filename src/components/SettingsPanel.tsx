@@ -9,6 +9,7 @@ import {
   X,
   Sun,
   Moon,
+  Monitor,
   Copy,
 
 } from 'lucide-react';
@@ -124,8 +125,11 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
 
         <div className="p-4 space-y-6">
           {/* Theme */}
-          <Section title={settings.language === 'fa' ? 'حالت نمایش' : 'المظهر'} icon={settings.theme === 'dark' ? Moon : Sun}>
-            <div className="grid grid-cols-2 gap-2">
+          <Section
+            title={settings.language === 'fa' ? 'حالت نمایش' : 'المظهر'}
+            icon={settings.theme === 'dark' ? Moon : settings.theme === 'system' ? Monitor : Sun}
+          >
+            <div className="grid grid-cols-3 gap-2">
               <Toggle
                 active={settings.theme === 'light'}
                 onClick={() => update({ theme: 'light' as Theme })}
@@ -138,22 +142,20 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
                 label={settings.language === 'fa' ? 'تاریک' : 'داكن'}
                 icon={<Moon className="w-4 h-4" />}
               />
+              <Toggle
+                active={settings.theme === 'system'}
+                onClick={() => update({ theme: 'system' as Theme })}
+                label={settings.language === 'fa' ? 'سیستم' : 'حسب النظام'}
+                icon={<Monitor className="w-4 h-4" />}
+              />
             </div>
           </Section>
 
           {/* Language */}
           <Section title={settings.language === 'fa' ? 'زبان' : 'اللغة'} icon={Languages}>
-            <div className="grid grid-cols-2 gap-2">
-              <Toggle
-                active={settings.language === 'ar'}
-                onClick={() => update({ language: 'ar' })}
-                label="العربية"
-              />
-              <Toggle
-                active={settings.language === 'fa'}
-                onClick={() => update({ language: 'fa' })}
-                label="فارسی"
-              />
+            <div className="flex items-center justify-center gap-2 rounded-lg border border-(--accent) bg-(--accent) px-3 py-2.5 text-sm font-medium text-white">
+              <Check className="w-4 h-4" />
+              العربية
             </div>
           </Section>
 

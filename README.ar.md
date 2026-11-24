@@ -1,47 +1,141 @@
 <div dir="rtl" align="right">
 
-# قرآن ريدر لايت | Quran Reader Lite
+# 📖 قرآن ريدر لايت — ويندوز
 
-**اللغات:** [English](README.md) | [فارسی](README.fa.md) | **العربية**
+<p align="center">
+  🌐 اللغة: <strong>العربية</strong> · <a href="README.md" dir="ltr">English</a>
+</p>
 
-**Quran Reader Lite** هو تطبيق لسطح مكتب Windows، مبني باستخدام **Electron وReact وTypeScript**، يتيح قراءة نص القرآن الكريم والبحث فيه دون الحاجة إلى الاتصال بالإنترنت. تحتوي نسخة Lite على النص العربي للقرآن فقط، ولا تشمل الترجمات أو التفاسير.
+<p align="center">
+  <img src="docs/screenshots/app-icon.png" alt="شعار تطبيق قرآن ريدر لايت" width="120" />
+</p>
 
-مصدر نص القرآن: [tanzil تنزيل](https://tanzil.net) — ترخيص CC BY 3.0.
+**قرآن ريدر لايت** تطبيق خفيف لقراءة القرآن الكريم على نظام <span dir="ltr">Windows</span>، ويعمل دون اتصال بالإنترنت. يوفّر النص العربي الكامل للقرآن فقط، دون ترجمات أو تفاسير.
 
-## ✨ الميزات الرئيسية
+> 🪟 يخص هذا المستودع إصدار <span dir="ltr">Windows</span> وحده.
 
-- قراءة السور الـ114 والبحث في الآيات.
-- عرض صور صفحات المصحف الـ604 المضمنة في الإصدار الحالي.
-- حفظ العلامات المرجعية وسجل البحث وآخر موضع للقراءة.
-- واجهة بالعربية أو الفارسية، ومظهر فاتح أو داكن، مع إمكانية تغيير حجم النص.
-- نسخ الآيات مع خيارات لأرقام الآيات وعلامات القرآن والمراجع.
-- إدراج هوامش فعلية في **Microsoft Word** و**Adobe InDesign** ضمن نسخة Windows المكتبية.
-- القراءة والبحث دون إنترنت؛ يلزم الاتصال بالإنترنت للحصول على التحديثات.
-- إصداران لنظام Windows: مثبّت **NSIS** ونسخة **Portable**.
-- تحديث تلقائي؛ تتحقق نسخة Portable من التوقيع الرقمي قبل استبدال ملف التطبيق.
+مصدر نص القرآن: [Tanzil](https://tanzil.net) — ترخيص <span dir="ltr">CC BY 3.0</span>.
 
-## 📥 التثبيت والإعداد
+---
 
-1. افتح [صفحة أحدث الإصدارات على GitHub](https://github.com/mediadesign853-cpu/quran-lite/releases/latest).
-2. نزّل أحد الملفين التاليين:
+## ⬇️ التنزيل
 
-   - **Quran Reader Lite Setup** — نسخة التثبيت، وهي الخيار المقترح للاستخدام المعتاد.
-   - **Quran Reader Lite Portable** — تعمل دون تثبيت.
+- 💽 [تحميل نسخة التثبيت (Setup 1.0.5)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.5/Quran-Reader-Lite-Setup-1.0.5.exe)
+- ⚡ [تحميل النسخة المحمولة (Portable 1.0.5)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.5/Quran-Reader-Lite-Portable-1.0.5.exe)
 
-3. شغّل الملف الذي نزّلته. في نسخة Portable، احتفظ بمجلد `Quran Reader Lite Data` بجانب ملف EXE؛ إذ تُحفظ فيه الإعدادات والعلامات المرجعية.
+يمكنك أيضاً زيارة [صفحة الإصدارات الرسمية](https://github.com/mediadesign853-cpu/Quran-Lite/releases/latest).
 
-### استخدام Word وInDesign
+---
 
-إدراج الهوامش الفعلية متاح فقط في تطبيق Windows المكتبي. يجب أن يكون Word أو InDesign مثبتاً على الجهاز. إذا تعذّر إدراج الهامش، افتح البرنامج المستهدف ثم حاول مرة أخرى.
+## 📸 لقطات الشاشة
 
-## 🔄 التحديث التلقائي
+انقر على أي صورة لعرضها بحجمها الكامل.
 
-- يتحقق التطبيق من توفر إصدار جديد بعد التشغيل، ويكرر الفحص بصورة دورية.
-- يطلب موافقة المستخدم قبل تنزيل التحديث.
-- تستخدم نسخة NSIS المثبتة آلية التحديث الخاصة بـ Electron.
-- تتحقق نسخة Portable من سلامة ملف التحديث قبل استبدال ملف التطبيق.
-- يتطلب التحديث اتصالاً بالإنترنت. ويجب أن يكون المجلد الذي يحتوي على ملف EXE في نسخة Portable قابلاً للكتابة.
+<p align="center">
+  <a href="docs/screenshots/Screenshot-1.png"><img src="docs/screenshots/Screenshot-1.png" alt="شاشة القراءة في قرآن ريدر لايت" width="49%" /></a>
+  <a href="docs/screenshots/screenshot-2.png"><img src="docs/screenshots/screenshot-2.png" alt="قائمة السور" width="49%" /></a>
+</p>
 
-**ملاحظة:** ملفات الإصدارات الحالية غير موقّعة بشهادة ناشر Windows (Authenticode)، لذلك قد يعرض Windows SmartScreen تحذير «ناشر غير معروف». نزّل التطبيق من [صفحة الإصدارات الرسمية](https://github.com/mediadesign853-cpu/quran-lite/releases/latest) فقط.
+<p align="center">
+  <a href="docs/screenshots/screenshot-3.png"><img src="docs/screenshots/screenshot-3.png" alt="البحث في الآيات" width="49%" /></a>
+  <a href="docs/screenshots/screenshot-4.png"><img src="docs/screenshots/screenshot-4.png" alt="لوحة الإعدادات" width="49%" /></a>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/screenshot-5.png"><img src="docs/screenshots/screenshot-5.png" alt="العلامات المرجعية" width="49%" /></a>
+  <a href="docs/screenshots/screenshot-6.png"><img src="docs/screenshots/screenshot-6.png" alt="نسخ الآيات" width="49%" /></a>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/screenshot-7.png"><img src="docs/screenshots/screenshot-7.png" alt="المظهر الداكن" width="49%" /></a>
+  <a href="docs/screenshots/screenshot-8.png"><img src="docs/screenshots/screenshot-8.png" alt="شاشة القراءة" width="49%" /></a>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/screenshot-9.png"><img src="docs/screenshots/screenshot-9.png" alt="مساعدة الاختصارات" width="49%" /></a>
+</p>
+
+### 🕌 صفحات المصحف
+
+<p align="center">
+  <img src="docs/screenshots/mushaf-page.webp" alt="صفحة من مصحف المدينة" width="420" />
+</p>
+
+تضم النسخة صفحات المصحف الـ604، ويتم إبراز الآية التي تقرؤها داخل الصفحة، مع إمكانية التكبير والتنقل بين الصفحات.
+
+---
+
+## ✨ ما الذي يوفّره التطبيق؟
+
+- 📖 قراءة السور الـ114 والآيات مع الحفاظ على رسم العثماني.
+- 🔎 بحث سريع في أسماء السور ونصوص الآيات.
+- 🔖 حفظ العلامات المرجعية وسجل البحث، والعودة تلقائياً إلى آخر موضع قراءة.
+- 🎨 واجهة عربية، مع مظهر فاتح أو داكن أو **حسب النظام**، وإمكانية تغيير حجم الخط العربي.
+- 📋 نسخ الآيات مع خيارات لرقم الآية والأقواس القرآنية والمرجع.
+- 🧾 إدراج هوامش فعلية في <span dir="ltr">Microsoft Word</span> و<span dir="ltr">Adobe InDesign</span> على <span dir="ltr">Windows</span>.
+- 🔄 تحديث تلقائي؛ تتحقق النسخة المحمولة من التوقيع الرقمي والبصمة قبل استبدال الملف.
+- 🌐 تعمل القراءة والبحث بالكامل دون إنترنت، ولا يلزم الاتصال إلا عند التحديث.
+
+---
+
+## 🧭 دليل الاستخدام
+
+### 📜 قائمة السور
+
+افتح القائمة من زر القائمة أعلى الشاشة، أو اضغط <span dir="ltr">Alt + S</span>. اختر السورة بالنقر عليها، وابحث باسمها أو برقمها في مربع البحث.
+
+### 🔎 البحث عن آية
+
+اضغط <span dir="ltr">Ctrl + F</span> للانتقال إلى مربع البحث. اكتب كلمة أو رقم آية، ثم اختر النتيجة للقفز إلى موضعها. يمكن التنقل بين النتائج بأسهم لوحة المفاتيح.
+
+### 🔖 العلامات المرجعية
+
+احفظ الآية الحالية بضغط <span dir="ltr">B</span>، وافتح لوحة العلامات بضغط <span dir="ltr">Alt + B</span>. تُمسح العلامة بنفس زر الحفظ، وتُغلق اللوحة بضغط <span dir="ltr">Esc</span>.
+
+### 📋 نسخ الآيات
+
+اختر آية أو عدة آيات متتالية، ثم اضغط <span dir="ltr">Ctrl + C</span> أو زر النسخ. من الإعدادات يمكنك تحديد شكل رقم الآية، ونوع الأقواس، وموضع المرجع، وحذف رقم الآية الأخيرة.
+
+### 🕌 صفحات المصحف
+
+اضغط <span dir="ltr">M</span> لعرض الصفحة التي تحتوي الآية الحالية. في عارض الصفحات يمكنك التكبير وتصفح الصفحات بالأسهم، ثم الإغلاق بضغط <span dir="ltr">Esc</span>.
+
+### 🎨 المظهر
+
+من الإعدادات اختر «فاتح» أو «داكن» أو «حسب النظام»؛ فالخيار الأخير يتبع إعداد المظهر في نظام التشغيل تلقائياً. يمكن أيضاً تبديل المظهر بضغط <span dir="ltr">Alt + T</span>.
+
+### 🔄 التحديث التلقائي
+
+يتحقق التطبيق من وجود إصدار جديد بعد تشغيله، ثم بصورة دورية، ويطلب موافقتك قبل التحميل. تحتاج النسخة المحمولة إلى إذن كتابة في المجلد الذي يحتوي ملف <span dir="ltr">EXE</span>. احتفظ بمجلد <span dir="ltr">Quran Reader Lite Data</span> بجانبه. إذا تعذّر التحديث فتبقى النسخة الحالية كما هي.
+
+---
+
+## ⌨️ الاختصارات
+
+| الاختصار | الوظيفة |
+|:---:|:---|
+| <span dir="ltr">S</span> | تحديد الآية أو إلغاء تحديدها |
+| <span dir="ltr">↑ / ↓</span> | التنقل بين الآيات أو النتائج أو السور |
+| <span dir="ltr">Shift + ↑ / ↓</span> | تحديد الآيات المجاورة |
+| <span dir="ltr">Ctrl + Shift + ↑ / ↓</span> | توسيع التحديد |
+| <span dir="ltr">Ctrl + ← / →</span> | السورة السابقة أو التالية |
+| <span dir="ltr">Ctrl + Home / End</span> | أول آية أو آخر آية |
+| <span dir="ltr">Ctrl + C</span> | نسخ الآيات المحددة |
+| <span dir="ltr">Esc</span> | إغلاق اللوحة أو مسح التحديد |
+| <span dir="ltr">Ctrl + F</span> | التركيز على مربع البحث |
+| <span dir="ltr">Alt + S</span> | فتح قائمة السور أو إغلاقها |
+| <span dir="ltr">Alt + B</span> | فتح العلامات أو إغلاقها |
+| <span dir="ltr">Ctrl + ,</span> | فتح الإعدادات أو إغلاقها |
+| <span dir="ltr">Alt + T</span> | تبديل المظهر |
+| <span dir="ltr">Alt + H</span> | عرض مساعدة الاختصارات |
+| <span dir="ltr">B</span> | إضافة الآية إلى العلامات أو حذفها |
+| <span dir="ltr">M</span> | فتح صفحة المصحف للآية الحالية |
+| <span dir="ltr">← / →</span> | تصفح صفحات المصحف |
+
+---
+
+## ⚠️ ملاحظة الأمان
+
+التوقيع الرقمي وفحص البصمة يحميان **عملية تحديث النسخة المحمولة**، وهما ليسا شهادة ناشر <span dir="ltr">Windows Authenticode</span>. لذلك قد يعرض <span dir="ltr">SmartScreen</span> تحذير «ناشر غير معروف». نزّل التطبيق من [صفحة الإصدارات الرسمية](https://github.com/mediadesign853-cpu/Quran-Lite/releases/latest) فقط.
 
 </div>
