@@ -1,4 +1,4 @@
-import type { SurahMeta, Language } from '@/types/quran';
+import type { SurahMeta } from '@/types/quran';
 
 // Page images of the Madinah Mushaf (Uthman Taha script, 604 pages).
 // The Windows app ships them inside the program (offline). They are never shown unless the user asks
@@ -12,7 +12,7 @@ declare global {
       /** true only when all page images are installed */
       pages: boolean;
       /** Inserts into the active Word/InDesign document; existing footnotes receive inline text. */
-      insertFootnote?: (payload: { target: 'word' | 'indesign'; text: string; reference: string; language: Language }) => Promise<{ ok: boolean; message?: string; code?: string }>;
+      insertFootnote?: (payload: { target: 'word' | 'indesign'; text: string; reference: string }) => Promise<{ ok: boolean; message?: string; code?: string }>;
     };
   }
 }

@@ -94,7 +94,7 @@ export default function SelectionCopyToolbar({ rootRef, settings, surahName }: S
   const handleCopy = () => {
     if (!selection) return;
 
-    void copyAyahPayload(selection.payload, settings.copyReferenceStyle, settings.language).then(({ ok }) => {
+    void copyAyahPayload(selection.payload, settings.copyReferenceStyle).then(({ ok }) => {
       if (!ok) return;
       setSelection(null);
       window.getSelection()?.removeAllRanges();

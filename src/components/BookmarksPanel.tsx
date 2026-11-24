@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Bookmark, X, Trash2, BookOpen } from 'lucide-react';
-import type { Language, SurahMeta } from '@/types/quran';
+import type { SurahMeta } from '@/types/quran';
 import { getBookmarks, removeBookmark, useBookmarksVersion, type BookmarkEntry } from '@/lib/bookmarks';
 import { fetchSurah, fetchSurahList } from '@/lib/quranData';
 import { trapFocus } from '@/lib/focusTrap';
@@ -8,7 +8,6 @@ import { trapFocus } from '@/lib/focusTrap';
 interface BookmarksPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  language: Language;
   onNavigate: (surahNumber: number, ayahNumber: number) => void;
 }
 

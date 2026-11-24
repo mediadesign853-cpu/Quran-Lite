@@ -31,7 +31,6 @@ export interface SurahEdition {
   ayahs: Ayah[];
   edition: {
     identifier: string;
-    language: string;
     name: string;
     englishName: string;
     format: string;
@@ -40,7 +39,6 @@ export interface SurahEdition {
   };
 }
 
-export type Language = 'ar' | 'fa';
 export type Theme = 'light' | 'dark' | 'system';
 /** How the ayah number is added when several ayahs are selected by hand and copied */
 export type CopyNumberStyle = 'plain' | 'brackets' | 'none';
@@ -50,7 +48,6 @@ export type CopyReferenceStyle = 'inline' | 'wordFootnote' | 'indesignFootnote' 
 export type CopyAyahBracketStyle = 'curly' | 'ornate' | 'none';
 
 export interface AppSettings {
-  language: Language;
   fontSize: number;
   theme: Theme;
   copyNumberStyle: CopyNumberStyle;

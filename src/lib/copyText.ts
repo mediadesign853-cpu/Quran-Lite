@@ -125,8 +125,7 @@ function reportFootnoteStatus(message: string, success: boolean): void {
   window.dispatchEvent(new CustomEvent('quran:copy-status', { detail: { message, success } }));
 }
 
-function getFootnoteMessages(language: string) {
-  void language;
+function getFootnoteMessages() {
   return {
     webUnavailable: 'لا يمكن إنشاء هامش حقيقية في إصدار الويب؛ تم نسخ الآية ومرجعها. استخدم إصدار Windows لإدراج الهامش',
     wordSuccess: 'تم إدراج الآية والهامش في Word',
@@ -146,8 +145,7 @@ function getFootnoteMessages(language: string) {
  */
 export async function copyAyahPayload(
   payload: AyahCopyPayload,
-  style: CopyReferenceStyle,
-  language: string = document.documentElement.lang || 'ar'
+  style: CopyReferenceStyle
 ): Promise<CopyActionResult> {
   if (style === 'inline' || style === 'none') {
     return {
@@ -159,7 +157,7 @@ export async function copyAyahPayload(
   const target = style === 'wordFootnote' ? 'word' : 'indesign';
   const fallback = formatCopyFallback(payload, style);
   const desktopBridge = window.quranApp;
-  const messages = getFootnoteMessages(language);
+  const messages = getFootnoteMessages();
 
   if (!desktopBridge?.insertFootnote) {
     const copied = await copyToClipboard(fallback);
@@ -175,8 +173,6 @@ export async function copyAyahPayload(
       target,
       text: payload.text,
       reference: payload.reference,
-      language: 'ar'
-
     });
     if (result.ok) {
       const insertedIntoExistingFootnote = result.code === 'existing-footnote-text';

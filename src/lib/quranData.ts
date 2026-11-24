@@ -50,7 +50,6 @@ export function getAyahText(surah: SurahEdition[], ayahIndex: number): string {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  language: 'ar',
   fontSize: 28,
   theme: 'light',
   copyNumberStyle: 'plain',
@@ -78,7 +77,6 @@ export function loadSettings(): AppSettings {
     const requestedFontSize = Number(parsed.fontSize);
     const settings: AppSettings = {
       // This edition ships with the Arabic interface only.
-      language: 'ar',
       theme: parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'system'
         ? parsed.theme
         : DEFAULT_SETTINGS.theme,

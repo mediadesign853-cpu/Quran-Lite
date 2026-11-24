@@ -1,5 +1,4 @@
 ﻿import { BookOpen } from 'lucide-react';
-import type { Language } from '@/types/quran';
 
 export function ReaderLoadingState() {
   return (
@@ -27,7 +26,6 @@ export function ReaderErrorState({
   onRetry,
 }: {
   error: string;
-  language: Language;
   onRetry: () => void;
 }) {
   const message = error === 'load-surah-failed'

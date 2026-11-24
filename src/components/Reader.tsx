@@ -169,13 +169,12 @@ export default function Reader({
     const result = await copyAyahPayload(
       clickedAyahCopy.payload,
       settings.copyReferenceStyle,
-      settings.language,
     );
     if (result.ok) {
       setSelectedAyahs(new Set());
       keyboardSelectionAnchorRef.current = null;
     }
-  }, [clickedAyahCopy, settings.copyReferenceStyle, settings.language]);
+  }, [clickedAyahCopy, settings.copyReferenceStyle]);
 
   // Handle Ctrl+C / Cmd+C explicitly so whole-ayah click selection works even
   // when the browser has no native text selection.
@@ -243,7 +242,6 @@ export default function Reader({
     const result = await copyAyahPayload(
       activeCopy.payload,
       settings.copyReferenceStyle,
-      settings.language
     );
     if (result.ok) {
       if (selectionCopy) {
@@ -254,7 +252,7 @@ export default function Reader({
         keyboardSelectionAnchorRef.current = null;
       }
     }
-  }, [activeCopy, selectionCopy, clickedAyahCopy, settings.copyReferenceStyle, settings.language]);
+  }, [activeCopy, selectionCopy, clickedAyahCopy, settings.copyReferenceStyle]);
 
   // Copy selected Arabic text
   useEffect(() => {
@@ -287,7 +285,7 @@ export default function Reader({
 
       e.clipboardData?.setData('text/plain', formatCopyFallback(payload, settings.copyReferenceStyle));
       e.preventDefault();
-      void copyAyahPayload(payload, settings.copyReferenceStyle, settings.language).then(({ ok }) => {
+      void copyAyahPayload(payload, settings.copyReferenceStyle).then(({ ok }) => {
         if (ok && !hasNativeTextSelection && clickedAyahCopy) {
           setSelectedAyahs(new Set());
           keyboardSelectionAnchorRef.current = null;
@@ -300,7 +298,7 @@ export default function Reader({
     return () => {
       document.removeEventListener('copy', onCopy);
     };
-  }, [clickedAyahCopy, readerShortcutsBlocked, settings.copyNumberStyle, settings.omitLastAyahNumber, settings.copyReferenceStyle, settings.copyAyahBracketStyle, settings.language, surahMeta?.name]);
+  }, [clickedAyahCopy, readerShortcutsBlocked, settings.copyNumberStyle, settings.omitLastAyahNumber, settings.copyReferenceStyle, settings.copyAyahBracketStyle, surahMeta?.name]);
 
   // Keyboard navigation is scoped to the reader and never hijacks typing,
   // native text selection, or controls elsewhere in the application.
@@ -589,7 +587,7 @@ export default function Reader({
 
   // Keep the three early states separate from the reader layout.
   if (error && !surahData) {
-    return <ReaderErrorState error={error} language={settings.language} onRetry={onRetry} />;
+    return <ReaderErrorState error={error} onRetry={onRetry} />;
   }
   if (loading && !surahData) return <ReaderLoadingState />;
   if (!surahMeta || !surahData || !surahData[0]) {

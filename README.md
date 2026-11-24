@@ -20,10 +20,10 @@ Quran text source: [Tanzil](https://tanzil.net) — CC BY 3.0.
 
 Download directly from the links below, or visit the [Releases page](https://github.com/mediadesign853-cpu/Quran-Lite/releases/latest).
 
-| 🪟 Latest release (v1.0.6) | File |
+| 🪟 Latest release (v1.0.7) | File |
 |:---:|:---:|
-| 💽 Installer (NSIS) | [📥 Quran Reader Lite Setup 1.0.6.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.6/Quran-Reader-Lite-Setup-1.0.6.exe) |
-| ⚡ Portable | [📥 Quran Reader Lite Portable 1.0.6.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.6/Quran-Reader-Lite-Portable-1.0.6.exe) |
+| 💽 Installer (NSIS) | [📥 Quran Reader Lite Setup 1.0.7.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.7/Quran-Reader-Lite-Setup-1.0.7.exe) |
+| ⚡ Portable | [📥 Quran Reader Lite Portable 1.0.7.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.7/Quran-Reader-Lite-Portable-1.0.7.exe) |
 
 The **Portable** build runs without installation. Keep the `Quran Reader Lite Data` folder next to the EXE: it stores settings, bookmarks, and history, and it must stay writable so automatic updates can replace the EXE.
 
@@ -130,16 +130,16 @@ The manifest script signs the **GitHub asset name** (`Quran-Reader-Lite-Portable
 
 The workflow `.github/workflows/release-windows.yml` runs **only when a tag starting with `v` is pushed**. Existing tags are never removed, so the update chain stays intact.
 
-1. Set the new version in `package.json` and `package-lock.json` (for example `1.0.6`).
+1. Set the new version in `package.json` and `package-lock.json` (for example `1.0.7`).
 2. Regenerate the lockfile if dependencies changed, then run `npm run check`.
 3. Commit, push `main`, and push a matching tag:
 
 ```powershell
 git add package.json package-lock.json
-git commit -m "Release v1.0.6"
+git commit -m "Release v1.0.7"
 git push origin main
-git tag v1.0.6
-git push origin v1.0.6
+git tag v1.0.7
+git push origin v1.0.7
 ```
 
 The runner installs dependencies, runs the checks, builds both packages, creates the signed Portable manifest, uploads the assets, and publishes the release only after the update metadata is present. Required repository secret: `PORTABLE_UPDATE_PRIVATE_KEY`.

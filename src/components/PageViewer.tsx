@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, ImageOff, Highlighter } from 'lucide-react';
-import type { Language, SurahMeta } from '@/types/quran';
+import type { SurahMeta } from '@/types/quran';
 import {
   TOTAL_PAGES,
   HIGHLIGHT_MS,
@@ -14,7 +14,6 @@ import {
 interface PageViewerProps {
   target: PageTarget | null;
   surahs: SurahMeta[];
-  language: Language;
   onClose: () => void;
   onChangePage: (page: number) => void;
 }

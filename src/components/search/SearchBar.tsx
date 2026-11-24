@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useDeferredValue, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Search, X, Loader2, BookOpen, FileText, History, Trash2, AlertTriangle, Lightbulb } from 'lucide-react';
-import type { SurahMeta, Language } from '@/types/quran';
+import type { SurahMeta } from '@/types/quran';
 import {
   searchSurahNames,
   searchAyahs,
@@ -18,7 +18,6 @@ interface SearchBarProps {
   surahs: SurahMeta[];
   /** the surah that is open: a bare number such as "205" means this surah's ayah 205 */
   currentSurah: number;
-  language: Language;
   /** `record` = false when an ayah is reopened from the history (it is not a new search) */
   onNavigateSurah: (surahNumber: number, ayahNumber?: number, query?: string, record?: boolean) => void;
 }

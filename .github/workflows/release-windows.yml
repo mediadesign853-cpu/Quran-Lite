@@ -40,11 +40,8 @@ jobs:
       - name: Run project checks
         run: npm run check
 
-      - name: Build and upload NSIS and Portable artifacts
-        run: npm run dist:win -- --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build NSIS and Portable artifacts
+        run: npm run dist:win -- --publish never
 
       - name: Create signed Portable update manifest
         run: node scripts/create-portable-update-manifest.cjs
@@ -52,21 +49,35 @@ jobs:
           PORTABLE_UPDATE_PRIVATE_KEY: ${{ secrets.PORTABLE_UPDATE_PRIVATE_KEY }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
 
-      - name: Upload Portable update metadata
+      - name: Publish one release with every update asset
         shell: pwsh
         run: |
-          gh release upload "$env:GITHUB_REF_NAME" `
-            "release/latest-portable.json" `
-            --repo "mediadesign853-cpu/quran-lite" `
-            --clobber
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish release after all update assets are uploaded
-        shell: pwsh
-        run: |
-          gh release edit "$env:GITHUB_REF_NAME" `
-            --draft=false `
-            --repo "mediadesign853-cpu/quran-lite"
+          $repo = "mediadesign853-cpu/Quran-Lite"
+          $tag = $env:GITHUB_REF_NAME
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $files = @()
+          Get-ChildItem -Path release -File | Where-Object {
+            $_.Name -like "*$version*" -or $_.Name -in @("latest.yml", "latest-portable.json")
+          } | ForEach-Object {
+            $name = $_.Name -replace " ", "-"
+            $target = Join-Path release $name
+            if ($name -ne $_.Name) { Move-Item -LiteralPath $_.FullName -Destination $target -Force }
+            $files += $target
+          }
+          $required = @(
+            "Quran-Reader-Lite-Portable-$version.exe",
+            "Quran-Reader-Lite-Setup-$version.exe",
+            "latest.yml",
+            "latest-portable.json"
+          )
+          foreach ($name in $required) {
+            if ($files -notcontains (Join-Path release $name)) { throw "Missing release asset: $name" }
+          }
+          if (gh release view $tag --repo $repo 2>$null) {
+            $arguments = @("release", "upload", $tag, "--clobber", "--repo", $repo) + $files
+          } else {
+            $arguments = @("release", "create", $tag, "--title", $tag, "--notes", "Automated Windows release", "--repo", $repo) + $files
+          }
+          & gh @arguments
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -42,15 +42,9 @@ export default function App() {
   const copyStatus = useCopyStatus();
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
   const pendingTargetRef = useRef<number | null>(null);
-  const searchHighlightTimerRef = useRef<number | null>(null);
   const [dismissedUpdate, setDismissedUpdate] = useState(false);
   useEffect(() => {
     purgeLegacyStorage();
-  }, []);
-  useEffect(() => () => {
-    if (searchHighlightTimerRef.current !== null) {
-      window.clearTimeout(searchHighlightTimerRef.current);
-    }
   }, []);
 
   useEffect(() => {
@@ -58,13 +52,13 @@ export default function App() {
       document.documentElement.setAttribute('data-theme', resolveTheme(settings.theme));
     };
     applyTheme();
-    document.documentElement.lang = settings.language;
+    document.documentElement.lang = 'ar';
     document.documentElement.dir = 'rtl';
     if (settings.theme !== 'system') return;
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     media.addEventListener('change', applyTheme);
     return () => media.removeEventListener('change', applyTheme);
-  }, [settings.theme, settings.language]);
+  }, [settings.theme]);
 
   // Load the surah catalogue independently so a failure can be retried without a page refresh.
   useEffect(() => {
@@ -129,10 +123,6 @@ export default function App() {
 
   const handleSelectSurah = useCallback((n: number) => {
     pendingTargetRef.current = null;
-    if (searchHighlightTimerRef.current !== null) {
-      window.clearTimeout(searchHighlightTimerRef.current);
-      searchHighlightTimerRef.current = null;
-    }
     if (n !== currentSurah) {
       setLoading(n !== loadedSurahNumber);
       setError(null);
@@ -144,18 +134,7 @@ export default function App() {
   }, [currentSurah, loadedSurahNumber]);
 
   const handleNavigateSurah = useCallback((surahNumber: number, ayahNumber?: number, query?: string, record = true) => {
-    if (query) {
-      setSearchQuery(query);
-      // Show the yellow search highlight briefly, then clear it from the reader.
-      // The found ayah stays marked by its row highlight.
-      if (searchHighlightTimerRef.current !== null) {
-        window.clearTimeout(searchHighlightTimerRef.current);
-      }
-      searchHighlightTimerRef.current = window.setTimeout(() => {
-        setSearchQuery('');
-        searchHighlightTimerRef.current = null;
-      }, 2000);
-    }
+    if (query) setSearchQuery(query);
     if (record && query && ayahNumber !== undefined) {
       recordAyahSearch(surahNumber, ayahNumber);
       addHistory(surahNumber, ayahNumber, query);
@@ -422,14 +401,12 @@ export default function App() {
       <PageViewer
         target={viewPage}
         surahs={surahs}
-        language={settings.language}
         onClose={() => setViewPage(null)}
         onChangePage={(page) => setViewPage((value) => (value ? { ...value, page } : value))}
       />
       <BookmarksPanel
         isOpen={bookmarksOpen}
         onClose={() => setBookmarksOpen(false)}
-        language={settings.language}
         onNavigate={handleNavigateSurah}
       />
 

@@ -82,7 +82,7 @@ export function useReaderContextMenu({
         label: 'نسخ النص المحدد',
         hint: 'Ctrl+C',
         onSelect: () => menu.selectedPayload
-          ? void copyAyahPayload(menu.selectedPayload, settings.copyReferenceStyle, settings.language)
+          ? void copyAyahPayload(menu.selectedPayload, settings.copyReferenceStyle)
           : void copyToClipboard(menu.selectedText),
       });
     }
@@ -103,7 +103,7 @@ export function useReaderContextMenu({
 
       items.push({
         label: `نسخ الآية ${ayah}`,
-        onSelect: () => void copyAyahPayload(payload, settings.copyReferenceStyle, settings.language),
+        onSelect: () => void copyAyahPayload(payload, settings.copyReferenceStyle),
       });
       items.push({
         label: `نسخ الآية ${ayah} مع الرقم`,
@@ -115,13 +115,12 @@ export function useReaderContextMenu({
             settings.copyAyahBracketStyle,
           ),
           settings.copyReferenceStyle,
-          settings.language,
         ),
       });
     }
 
     return items;
-  }, [menu, surahData, surahMeta?.name, settings.language, settings.copyNumberStyle, settings.copyReferenceStyle, settings.copyAyahBracketStyle]);
+  }, [menu, surahData, surahMeta?.name, settings.copyNumberStyle, settings.copyReferenceStyle, settings.copyAyahBracketStyle]);
 
   return { menu, menuItems, closeMenu, handleContextMenu };
 }

@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, type MouseEvent as ReactMouseEvent } from 'react';
+import { memo, useState, useCallback, useEffect, type MouseEvent as ReactMouseEvent } from 'react';
 import { Copy, Check, Bookmark, BookmarkCheck, Eye, FileImage } from 'lucide-react';
 import type { SurahEdition, AppSettings } from '@/types/quran';
 import { getAyahText, getHighlightedSegments } from '@/lib/quranData';
@@ -42,7 +42,28 @@ function AyahRow({
   onToggleSelect,
 }: AyahRowProps) {
   const [copied, setCopied] = useState(false);
+  const target = Boolean(isTarget);
+  const [targetHighlight, setTargetHighlight] = useState(target);
+  const [prevIsTarget, setPrevIsTarget] = useState(target);
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
   const ayahNumber = ayahIndex + 1;
+
+  // A new search (or a newly targeted ayah) restarts the brief row highlight.
+  // The searched words stay highlighted in the text.
+  if (target !== prevIsTarget) {
+    setPrevIsTarget(target);
+    setTargetHighlight(target);
+  }
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery);
+    if (target) setTargetHighlight(true);
+  }
+
+  useEffect(() => {
+    if (!target || !targetHighlight) return;
+    const timer = window.setTimeout(() => setTargetHighlight(false), 2500);
+    return () => window.clearTimeout(timer);
+  }, [target, targetHighlight, searchQuery]);
   const pageNumber = surahData[0]?.ayahs[ayahIndex]?.page;
   const arabicText = getAyahText(surahData, ayahIndex);
 
@@ -54,12 +75,12 @@ function AyahRow({
       ayahNumber,
       settings.copyAyahBracketStyle
     );
-    copyAyahPayload(payload, settings.copyReferenceStyle, settings.language).then(({ ok }) => {
+    copyAyahPayload(payload, settings.copyReferenceStyle).then(({ ok }) => {
       if (!ok) return;
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
-  }, [arabicText, surahName, ayahNumber, settings.copyReferenceStyle, settings.copyAyahBracketStyle, settings.language]);
+  }, [arabicText, surahName, ayahNumber, settings.copyReferenceStyle, settings.copyAyahBracketStyle]);
 
   const handleToggleBookmark = useCallback(() => {
     toggleBookmark({ surahNumber, ayahNumber });
@@ -96,7 +117,7 @@ function AyahRow({
       onClick={handleRowClick}
       data-ayah-row={ayahNumber}
       data-selected={selected ? 'true' : 'false'}
-      className={`group cursor-pointer rounded-xl transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 ${isTarget
+      className={`group cursor-pointer rounded-xl transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-(--accent) focus-visible:outline-offset-2 ${targetHighlight
         ? 'bg-amber-100/60 dark:bg-amber-900/20 ring-2 ring-amber-400/50'
         : selected
           ? 'bg-(--accent)/8 ring-1 ring-(--accent)/20'

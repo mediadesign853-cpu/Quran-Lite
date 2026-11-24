@@ -83,7 +83,6 @@ export default function ReaderHeader({
           <SearchBar
             surahs={surahs}
             currentSurah={surahMeta.number}
-            language={settings.language}
             onNavigateSurah={onNavigateSurah}
           />
         </div>
