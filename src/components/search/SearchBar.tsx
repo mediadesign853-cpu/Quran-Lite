@@ -27,24 +27,18 @@ interface SearchBarProps {
 const MAX_RESULTS_FOR_SUGGESTION = 3;
 
 /** Message for a reference that does not exist (e.g. "340"). */
-function warningText(w: ReferenceWarning, surahs: SurahMeta[], fa: boolean): string {
+function warningText(w: ReferenceWarning, surahs: SurahMeta[]): string {
   if (w.kind === 'surah') {
-    return fa
-      ? `سوره‌ای با شمارهٔ ${w.value} وجود ندارد؛ شمارهٔ سوره‌ها از ۱ تا ${surahs.length} است.`
-      : `لا توجد سورة برقم ${w.value}؛ أرقام السور من ١ إلى ${surahs.length}.`;
+    return `لا توجد سورة برقم ${w.value}؛ أرقام السور من ١ إلى ${surahs.length}.`;
   }
   const name = surahs[w.surah - 1]?.name ?? '';
   if (w.kind === 'ayah') {
-    return fa
-      ? `${name} فقط ${w.max} آیه دارد؛ آیهٔ ${w.value} وجود ندارد.`
-      : `${name} فيها ${w.max} آية فقط؛ لا توجد الآية ${w.value}.`;
+    return `${name} فيها ${w.max} آية فقط؛ لا توجد الآية ${w.value}.`;
   }
-  return fa
-    ? `«${w.value}» نامعتبر است: ${name} ${w.max} آیه دارد و شمارهٔ سوره‌ها از ۱ تا ${surahs.length} است.`
-    : `«${w.value}» غير صالح: ${name} فيها ${w.max} آية وأرقام السور من ١ إلى ${surahs.length}.`;
+  return `«${w.value}» غير صالح: ${name} فيها ${w.max} آية وأرقام السور من ١ إلى ${surahs.length}.`;
 }
 
-export default function SearchBar({ surahs, currentSurah, language, onNavigateSurah }: SearchBarProps) {
+export default function SearchBar({ surahs, currentSurah, onNavigateSurah }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState<SearchIndex | null>(null);
   const [indexError, setIndexError] = useState(false);
@@ -108,7 +102,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     };
     if (!deferredQuery.trim()) return none;
 
-    // "2:250", "205", "بقره 255": go straight to the surah / ayah (or say that it does not exist)
+    // "2:250", "205", "البقرة 255": go straight to the surah / ayah (or say that it does not exist)
     const reference = parseReference(deferredQuery, surahs, currentSurah);
     if (reference) {
       const hits: SearchResult[] = [];
@@ -306,8 +300,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
     }
   };
 
-  const t = language === 'fa';
-  const placeholder = t ? 'جستجو ...' : 'ابحث ...';
+  const placeholder = 'ابحث ...';
 
   function renderHighlighted(text: string) {
     const segments = getHighlightedSegments(text, deferredQuery);
@@ -354,14 +347,14 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           <div className="flex items-center justify-between px-4 py-2 border-b border-(--border-light)">
             <span className="flex items-center gap-1.5 text-xs font-medium text-(--text-secondary)">
               <History className="w-3.5 h-3.5" />
-              {t ? 'تاریخچهٔ جستجو' : 'سجل البحث'}
+              {'سجل البحث'}
             </span>
             <button
               onClick={() => { clearHistory(); setActiveHistoryIndex(-1); }}
               className="flex items-center gap-1 text-xs text-(--text-secondary) hover:text-red-600 transition-smooth"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              {t ? 'حذف همه' : 'حذف الكل'}
+              {'حذف الكل'}
             </button>
           </div>
           <div ref={historyListRef} className="overflow-y-auto flex-1">
@@ -387,7 +380,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
                   </button>
                   <button
                     onClick={() => removeHistory(entry.surah, entry.ayah)}
-                    aria-label={t ? 'حذف از تاریخچه' : 'حذف من السجل'}
+                    aria-label="حذف من السجل"
                     className="px-3 text-(--text-secondary) hover:text-red-600 transition-smooth focus-visible:outline-2 focus-visible:outline-(--accent)"
                   >
                     <X className="w-4 h-4" />
@@ -403,9 +396,9 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
         <div className="absolute top-full mt-2 w-full bg-(--bg-card) border border-(--border) rounded-xl shadow-2xl z-50 max-h-[60vh] flex flex-col animate-scale-in overflow-hidden">
           {indexError && (
             <div className="flex items-center justify-between gap-3 border-b border-(--border-light) px-4 py-3 text-sm text-red-700" role="alert">
-              <span>{t ? 'فهرست جستجوی آیات بارگذاری نشد' : 'تعذّر تحميل فهرس البحث عن الآيات'}</span>
+              <span>{'تعذّر تحميل فهرس البحث عن الآيات'}</span>
               <button onClick={retryIndex} className="shrink-0 underline">
-                {t ? 'تلاش دوباره' : 'إعادة المحاولة'}
+                {'إعادة المحاولة'}
               </button>
             </div>
           )}
@@ -414,7 +407,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           {warning && (
             <div className="flex items-start gap-2 px-4 py-3 bg-amber-50 text-amber-800 text-sm border-b border-amber-200">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-              <span>{warningText(warning, surahs, t)}</span>
+              <span>{warningText(warning, surahs)}</span>
             </div>
           )}
 
@@ -426,9 +419,9 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
             >
               <Lightbulb className="w-4 h-4 text-(--accent)  shrink-0" />
               <span className='font-arabic font-bold'>
-                {t ? 'آیا منظور شما' : 'هل تقصد: '}
+                {'هل تقصد: '}
                 <span className="font-quran font-black text-base text-(--accent)">«{suggestion}»</span>
-                {t ? ' بود؟' : '؟'}
+                {'؟'}
               </span>
             </button>
           )}
@@ -436,13 +429,13 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
           {/* Tabs */}
           <div className="flex items-center justify-center gap-6 border-b border-(--border-light) px-2 pt-2">
             <TabButton active={activeTab === 'all'} onClick={() => handleTabChange('all')}>
-              {t ? 'همه' : 'الكل'} ({results.length}{capped ? '+' : ''})
+              {'الكل'} ({results.length}{capped ? '+' : ''})
             </TabButton>
             <TabButton active={activeTab === 'surahs'} onClick={() => handleTabChange('surahs')}>
-              {t ? 'سوره‌ها' : 'السور'} ({surahResults.length})
+              {'السور'} ({surahResults.length})
             </TabButton>
             <TabButton active={activeTab === 'ayahs'} onClick={() => handleTabChange('ayahs')}>
-              {t ? 'آیات' : 'الآيات'} ({ayahResults.length}{capped ? '+' : ''})
+              {'الآيات'} ({ayahResults.length}{capped ? '+' : ''})
             </TabButton>
           </div>
 
@@ -451,7 +444,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
             {filteredResults.length === 0 && !loadingIndex && !warning && !suggestion && (
             <div className="text-center py-8 px-4">
               <p className="text-sm text-(--text-secondary)">
-                {t ? 'نتیجه‌ای یافت نشد' : 'لا توجد نتائج'}
+                {'لا توجد نتائج'}
               </p>
             </div>
             )}
@@ -489,7 +482,7 @@ export default function SearchBar({ surahs, currentSurah, language, onNavigateSu
                       <span className="text-xs text-(--text-secondary) shrink-0 ml-2">{result.surahNumber}</span>
                     </div>
                     <div className="text-xs text-(--text-secondary) truncate">
-                      {t ? 'سوره' : 'سورة'} · {renderHighlighted(result.englishName)}
+                      {'سورة'} · {renderHighlighted(result.englishName)}
                     </div>
                   </div>
                 </button>

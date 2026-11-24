@@ -2,7 +2,6 @@ import { useRef, useEffect } from 'react';
 import {
   Settings,
   Type,
-  Languages,
   Check,
   Plus,
   Minus,
@@ -11,10 +10,10 @@ import {
   Moon,
   Monitor,
   Copy,
-
 } from 'lucide-react';
 import type { AppSettings, Theme, CopyNumberStyle, CopyReferenceStyle, CopyAyahBracketStyle } from '@/types/quran';
 import { Section, Toggle } from '@/components/settings/SettingsPrimitives';
+import ThemeSelect from '@/components/ThemeSelect';
 import { trapFocus } from '@/lib/focusTrap';
 
 interface SettingsPanelProps {
@@ -43,12 +42,10 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
 
   const update = (patch: Partial<AppSettings>) => onChange({ ...settings, ...patch });
 
-  const fa = settings.language === 'fa';
-
   const copyStyles: { value: CopyNumberStyle; label: string }[] = [
-    { value: 'plain', label: fa ? 'عدد ساده (37)' : 'رقم عادي: 37' },
-    { value: 'brackets', label: fa ? 'داخل پرانتز ﴿37﴾' : 'بين قوسين: ﴿37﴾' },
-    { value: 'none', label: fa ? 'بدون شماره' : 'بدون رقم' },
+    { value: 'plain', label: 'رقم عادي: 37' },
+    { value: 'brackets', label: 'بين قوسين: ﴿37﴾' },
+    { value: 'none', label: 'بدون رقم' },
   ];
 
   const copyAyahBracketStyles: {
@@ -57,15 +54,15 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
   }[] = [
       {
         value: 'curly',
-        label: fa ? 'آکولاد { }' : 'قوسان معقوفان { }',
+        label: 'قوسان معقوفان { }',
       },
       {
         value: 'ornate',
-        label: fa ? 'پرانتز تزئینی  ﴿ ﴾' : 'القوسان المزخرفان ﴿ ﴾',
+        label: 'القوسان المزخرفان ﴿ ﴾',
       },
       {
         value: 'none',
-        label: fa ? 'بدون پرانتز' : 'بدون أقواس',
+        label: 'بدون أقواس',
       },
     ];
 
@@ -75,19 +72,19 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
   }[] = [
       {
         value: 'inline',
-        label: fa ? 'همراه متن' : 'مع النص',
+        label: 'مع النص',
       },
       {
         value: 'wordFootnote',
-        label: fa ? 'پاورقی Word' : 'الهامش  في Word',
+        label: 'الهامش  في Word',
       },
       {
         value: 'indesignFootnote',
-        label: fa ? 'پاورقی InDesign' : ' الهامش في InDesign',
+        label: ' الهامش في InDesign',
       },
       {
         value: 'none',
-        label: fa ? 'بدون نشانی' : 'بدون مرجع',
+        label: 'بدون مرجع',
       },
     ];
 
@@ -95,8 +92,14 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40"
-          style={{ background: 'var(--overlay)' }}
+          className="fixed z-40"
+          style={{
+            top: 'var(--header-bottom, 0px)',
+            bottom: 'var(--footer-height, 0px)',
+            left: 0,
+            right: 0,
+            background: 'var(--overlay)',
+          }}
           onClick={onClose}
         />
       )}
@@ -105,20 +108,21 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
         role="dialog"
         aria-modal={isOpen}
         aria-hidden={!isOpen}
-        aria-label={fa ? 'تنظیمات' : 'الإعدادات'}
+        aria-label="الإعدادات"
         tabIndex={-1}
-        className={`fixed top-0 left-0 h-full w-80 bg-(--bg-card) shadow-2xl z-50 flex flex-col transition-transform duration-300 overflow-y-auto
-           ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
-        }
+        className={`fixed left-0 w-80 bg-(--bg-card) shadow-2xl z-50 flex flex-col transition-transform duration-300 overflow-y-auto
+           ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{
+          top: 'var(--header-bottom, 0px)',
+          bottom: 'var(--footer-height, 0px)',
+        }}
       >
         <div className="sticky top-0 bg-(--bg-card) border-b border-(--border) px-4 py-3 flex items-center justify-between z-10">
           <div className="flex items-center gap-2">
             <Settings className="w-5 h-5 text-(--accent)" />
-            <h2 className="text-sm font-semibold">
-              {settings.language === 'fa' ? 'تنظیمات' : 'الإعدادات'}
-            </h2>
+            <h2 className="text-sm font-semibold">الإعدادات</h2>
           </div>
-          <button ref={closeButtonRef} onClick={onClose} aria-label={fa ? 'بستن تنظیمات' : 'إغلاق الإعدادات'} className="p-1.5 rounded-lg hover:bg-(--border-light) transition-smooth">
+          <button ref={closeButtonRef} onClick={onClose} aria-label="إغلاق الإعدادات" className="p-1.5 rounded-lg hover:bg-(--border-light) transition-smooth">
             <X className="w-5 h-5 text-(--text-secondary)" />
           </button>
         </div>
@@ -126,44 +130,17 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
         <div className="p-4 space-y-6">
           {/* Theme */}
           <Section
-            title={settings.language === 'fa' ? 'حالت نمایش' : 'المظهر'}
+            title="المظهر"
             icon={settings.theme === 'dark' ? Moon : settings.theme === 'system' ? Monitor : Sun}
           >
-            <div className="grid grid-cols-3 gap-2">
-              <Toggle
-                active={settings.theme === 'light'}
-                onClick={() => update({ theme: 'light' as Theme })}
-                label={settings.language === 'fa' ? 'روشن' : 'فاتح'}
-                icon={<Sun className="w-4 h-4" />}
-              />
-              <Toggle
-                active={settings.theme === 'dark'}
-                onClick={() => update({ theme: 'dark' as Theme })}
-                label={settings.language === 'fa' ? 'تاریک' : 'داكن'}
-                icon={<Moon className="w-4 h-4" />}
-              />
-              <Toggle
-                active={settings.theme === 'system'}
-                onClick={() => update({ theme: 'system' as Theme })}
-                label={settings.language === 'fa' ? 'سیستم' : 'حسب النظام'}
-                icon={<Monitor className="w-4 h-4" />}
-              />
-            </div>
-          </Section>
-
-          {/* Language */}
-          <Section title={settings.language === 'fa' ? 'زبان' : 'اللغة'} icon={Languages}>
-            <div className="flex items-center justify-center gap-2 rounded-lg border border-(--accent) bg-(--accent) px-3 py-2.5 text-sm font-medium text-white">
-              <Check className="w-4 h-4" />
-              العربية
-            </div>
+            <ThemeSelect
+              theme={settings.theme}
+              onChange={(theme: Theme) => update({ theme })}
+            />
           </Section>
 
           {/* Change Font Size */}
-          <Section
-            title={settings.language === 'fa' ? 'اندازه متن' : 'حجم النص'}
-            icon={Type}
-          >
+          <Section title="حجم النص" icon={Type}>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => update({ fontSize: Math.max(16, settings.fontSize - 2) })}
@@ -177,7 +154,7 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
               </div>
               <button
                 onClick={() => update({ fontSize: Math.min(56, settings.fontSize + 2) })}
-                className="w-10 h-10 rounded-lg border border-(--border) flex items-center justify-center hover:bg-(--border-light) transition-smooth"
+                className="w-10 h-10 rounded-lg border border-var(--border) flex items-center justify-center hover:bg-(--border-light) transition-smooth"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -196,13 +173,11 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
           </Section>
 
           {/* Brackets around copied ayahs */}
-          <Section title={fa ? 'پرانتز' : 'الأقواس'} icon={Copy}>
+          <Section title="الأقواس" icon={Copy}>
             <p className="text-xs leading-6 text-(--text-secondary) mb-2">
-              {fa
-                ? 'قرار دادن آیه بین پرانتز قرآنی'
-                : 'وضع الآية بين القوسين'}
+              وضع الآية بين القوسين
             </p>
-            <div role="radiogroup" aria-label={fa ? 'نوع قوس آیه' : 'نوع أقواس الآية'} className="space-y-2">
+            <div role="radiogroup" aria-label="نوع أقواس الآية" className="space-y-2">
               {copyAyahBracketStyles.map((option) => {
                 const active = settings.copyAyahBracketStyle === option.value;
                 return (
@@ -234,7 +209,7 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
           </Section>
 
           {/* Copy reference placement */}
-          <Section title={fa ? 'نحوه درج نشانی آیه' : 'موضع إدراج مرجع الآية'} icon={Copy}>
+          <Section title="موضع إدراج مرجع الآية" icon={Copy}>
             <div
               role="radiogroup"
               className="space-y-2  border-t-teal-600"
@@ -269,7 +244,7 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
           </Section>
 
           {/* Copy */}
-          <Section title={fa ? 'شمارهٔ آیه هنگام کپی' : 'رقم الآية عند النسخ'} icon={Copy}>
+          <Section title="رقم الآية عند النسخ" icon={Copy}>
             <div className="space-y-2">
               {copyStyles.map((c) => (
                 <button
@@ -287,18 +262,16 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
               <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-(--border) px-3 py-3">
                 <div className="min-w-0">
                   <span className="block text-sm font-medium">
-                    {fa ? 'حذف شمارهٔ آخرین آیه' : 'حذف رقم الآية الأخيرة'}
+                    حذف رقم الآية الأخيرة
                   </span>
                   <span className="mt-1 block text-xs text-(--text-secondary)">
-                    {fa
-                      ? 'شمارهٔ آیهٔ پایانی درج نمی‌شود'
-                      : 'إظهار رقم الآية الأخيرة'}
+                    إظهار رقم الآية الأخيرة
                   </span>
                 </div>
                 <Toggle
                   active={settings.omitLastAyahNumber}
                   onClick={() => update({ omitLastAyahNumber: !settings.omitLastAyahNumber })}
-                  label={settings.omitLastAyahNumber ? (fa ? 'فعال' : 'اظهار' ) : (fa ? 'غیرفعال' : 'اخفاء')}
+                  label={settings.omitLastAyahNumber ? 'اظهار' : 'اخفاء'}
                 />
               </div>
             </div>

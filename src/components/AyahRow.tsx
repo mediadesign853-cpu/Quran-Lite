@@ -90,10 +90,8 @@ function AyahRow({
     <div
       role="group"
       tabIndex={isTarget || ayahNumber === 1 ? 0 : -1}
-      aria-roledescription={settings.language === 'fa' ? 'آیه' : 'الآية'}
-      aria-label={settings.language === 'fa'
-        ? `آیه ${ayahNumber}${selected ? '، انتخاب‌شده' : ''}`
-        : `الآية ${ayahNumber}${selected ? '، محددة' : ''}`}
+      aria-roledescription="الآية"
+      aria-label={`الآية ${ayahNumber}${selected ? '، محددة' : ''}`}
       aria-keyshortcuts={`S B${onShowPage && pageNumber ? ' M' : ''} Shift+ArrowUp Shift+ArrowDown Control+Shift+ArrowUp Control+Shift+ArrowDown Control+ArrowLeft Control+ArrowRight Control+Home Control+End`}
       onClick={handleRowClick}
       data-ayah-row={ayahNumber}
@@ -120,7 +118,7 @@ function AyahRow({
             <span
               className="ayah-number mx-1 inline whitespace-nowrap select-none font-quran"
               dir="rtl"
-              aria-label={settings.language === 'fa' ? `آیه ${ayahNumber}` : `الآية ${ayahNumber}`}
+              aria-label={`الآية ${ayahNumber}`}
               style={{ fontSize: `${settings.fontSize}px` }}
             >
               {toArabicIndicDigits(ayahNumber)}
@@ -141,8 +139,8 @@ function AyahRow({
           <button
             onClick={(event) => { event.stopPropagation(); handleCopy(); }}
             className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-(--accent)/10 focus-visible:outline-2 focus-visible:outline-(--accent)"
-            aria-label={settings.language === 'fa' ? 'کپی آیه' : 'نسخ الآية'}
-            data-tooltip={settings.language === 'fa' ? 'کپی' : 'نسخ'}
+            aria-label="نسخ الآية"
+            data-tooltip="نسخ"
           >
             {copied ? (
               <Check className="h-4 w-4 text-(--accent)" />
@@ -153,9 +151,9 @@ function AyahRow({
           <button
             onClick={(event) => { event.stopPropagation(); handleToggleBookmark(); }}
             className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-(--accent)/10  focus-visible:outline-2 focus-visible:outline-(--accent)"
-            aria-label={settings.language === 'fa' ? 'نشان‌گذاری آیه' : 'وضع علامة على الآية'}
+            aria-label="وضع علامة على الآية"
             aria-pressed={bookmarked}
-            data-tooltip={settings.language === 'fa' ? 'نشان' : 'علامة'}
+            data-tooltip="علامة"
           >
             {bookmarked ? (
               <BookmarkCheck className="h-4 w-4 text-(--accent)" />
@@ -167,8 +165,8 @@ function AyahRow({
             <button
               onClick={(event) => { event.stopPropagation(); onShowPage({ page: pageNumber, surah: surahNumber, ayah: ayahNumber }); }}
               className="tooltip rounded-lg p-2 transition-colors duration-200 hover:bg-(--accent)/10  focus-visible:outline-2 focus-visible:outline-(--accent)"
-              aria-label={settings.language === 'fa' ? `نمایش صفحهٔ ${pageNumber}` : `عرض الصفحة ${pageNumber}`}
-              data-tooltip={settings.language === 'fa' ? `صفحهٔ مصحف (${pageNumber})` : `صفحة المصحف (${pageNumber})`}
+              aria-label={`عرض الصفحة ${pageNumber}`}
+              data-tooltip={`صفحة المصحف (${pageNumber})`}
             >
               <FileImage className="h-4 w-4 text-(--text-secondary)" />
             </button>

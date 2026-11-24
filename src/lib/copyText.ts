@@ -40,7 +40,7 @@ export function cleanSurahName(name: string): string {
     .replace(/\s+/gu, ' ')
     .trim()
     .replace(/^سورة\s*/u, '')
-    .replace(/^سوره\s*/u, '');
+    .replace(/^سور[\u0647\u06CC]\s*/u, '');
 }
 
 /**
@@ -126,21 +126,7 @@ function reportFootnoteStatus(message: string, success: boolean): void {
 }
 
 function getFootnoteMessages(language: string) {
-  const isPersian = language.toLowerCase().startsWith('fa');
-  if (isPersian) {
-    return {
-      webUnavailable: 'در نسخهٔ وب پاورقی واقعی ایجاد نمی‌شود؛ متن آیه و نشانی آن کپی شد. برای درج پاورقی از نسخهٔ دسکتاپ استفاده کنید',
-      wordSuccess: 'آیه و پاورقی در Word درج شدند',
-      indesignSuccess: 'آیه و پاورقی در انديزاين درج شدند',
-      wordExistingFootnoteSuccess: 'متن آیه و مرجع آن در هامش موجود Word درج شدند',
-      indesignExistingFootnoteSuccess: 'متن آیه و مرجع آن در هامش موجود InDesign درج شدند',
-      insertFailed: 'درج پاورقی ناموفق بود',
-      fallbackCopied: 'آیه و نشانی آن به‌صورت متن عادی کپی شدند',
-      connectionFailed: 'اتصال به نرم‌افزار برقرار نشد',
-      unknownError: 'خطای ناشناخته در ارتباط با برنامهٔ دسکتاپ',
-    };
-  }
-
+  void language;
   return {
     webUnavailable: 'لا يمكن إنشاء هامش حقيقية في إصدار الويب؛ تم نسخ الآية ومرجعها. استخدم إصدار Windows لإدراج الهامش',
     wordSuccess: 'تم إدراج الآية والهامش في Word',

@@ -113,10 +113,10 @@ export default function SelectionCopyToolbar({ rootRef, settings, surahName }: S
         type="button"
         onClick={handleCopy}
         className="flex items-center gap-2 rounded-full border border-(--border) bg-(--bg-card) px-3 py-2 text-xs font-semibold text-(--text-primary) shadow-xl transition-smooth hover:border-(--accent) hover:text-(--accent)  focus-visible:outline-2 focus-visible:outline-(--accent)"
-        aria-label={settings.language === 'fa' ? 'کپی آیات انتخاب‌شده' : 'نسخ الآيات المحددة'}
+        aria-label="نسخ الآيات المحددة"
       >
         <Copy className="h-3.5 w-3.5" />
-        {settings.language === 'fa' ? 'کپی آیات انتخاب‌شده' : 'نسخ الآيات المحددة'}
+        {'نسخ الآيات المحددة'}
       </button>
     </div>
   );

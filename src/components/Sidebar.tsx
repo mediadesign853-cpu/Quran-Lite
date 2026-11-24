@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Search, X, BookOpen, Eye } from 'lucide-react';
 import type { SurahMeta } from '@/types/quran';
-import type { Language } from '@/types/quran';
 import { normalizeSearch } from '@/lib/quranData';
 import { getSurahViewCount, useStatsVersion } from '@/lib/viewStats';
 import { trapFocus } from '@/lib/focusTrap';
@@ -10,12 +9,11 @@ interface SidebarProps {
   surahs: SurahMeta[];
   currentSurah: number | null;
   onSelectSurah: (n: number) => void;
-  language: Language;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function Sidebar({ surahs, currentSurah, onSelectSurah, language, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ surahs, currentSurah, onSelectSurah, isOpen, onClose }: SidebarProps) {
   const [search, setSearch] = useState('');
   const [activeSurahNumber, setActiveSurahNumber] = useState<number | null>(currentSurah);
   const listRef = useRef<HTMLDivElement>(null);
@@ -27,9 +25,9 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
 
   const filtered = useMemo(() => {
     if (!search.trim()) return surahs;
-    const raw = search.trim().replace(/[٠-٩۰-۹]/g, (digit) => {
-      const arabic = '٠١٢٣٤٥٦٧٨٩'.indexOf(digit);
-      const persian = '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit);
+    const raw = search.trim().replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (digit) => {
+      const arabic = '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669'.indexOf(digit);
+      const persian = '\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9'.indexOf(digit);
       return String(Math.max(arabic, persian));
     });
     const numeric = /^\d+$/.test(raw);
@@ -116,8 +114,12 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
     <>
       {isOpen && (
         <div
-          className="fixed right-0 bottom-0 left-0 z-30"
-          style={{ top: 'var(--header-bottom, 0px)', background: 'var(--overlay)' }}
+          className="fixed right-0 left-0 z-30"
+          style={{
+            top: 'var(--header-bottom, 0px)',
+            bottom: 'var(--footer-height, 0px)',
+            background: 'var(--overlay)',
+          }}
           onClick={onClose}
         />
       )}
@@ -126,28 +128,31 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
         role="dialog"
         aria-modal={isOpen}
         aria-hidden={!isOpen}
-        aria-label={language === 'fa' ? 'فهرست سوره‌ها' : 'قائمة السور'}
+        aria-label="قائمة السور"
         tabIndex={-1}
         onKeyDown={handleSidebarKeyDown}
-        className={`fixed right-0 bottom-0 w-80 bg-(--bg-secondary)
+        className={`fixed right-0 w-80 bg-(--bg-secondary)
           border-l border-(--border) z-90  flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
         }`}
-        style={{ top: 'var(--header-bottom, 0px)' }}
+        style={{
+          top: 'var(--header-bottom, 0px)',
+          bottom: 'var(--footer-height, 0px)',
+        }}
       >
         <div className="p-4 border-b border-(--border)">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-(--accent)" />
               <h2 className="text-sm font-semibold text-(--text-primary)">
-                {language === 'fa' ? 'فهرست سوره‌ها' : 'السور'}
+                السور
               </h2>
             </div>
             
             <button
               ref={closeButtonRef}
               onClick={onClose}
-              aria-label={language === 'fa' ? 'بستن فهرست سوره‌ها' : 'إغلاق قائمة السور'}
+              aria-label="إغلاق قائمة السور"
               className="cursor-pointer p-1 rounded hover:bg-(--border-light) transition-smooth"
             >
               <X className="w-5 h-5 text-(--text-secondary)" />
@@ -162,8 +167,8 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onFocus={() => setActiveSurahNumber(currentSurah)}
-              placeholder={language === 'fa' ? 'جستجوی سوره...' : 'بحث عن سورة...'}
-              aria-label={language === 'fa' ? 'جستجوی سوره‌ها' : 'البحث عن سورة'}
+              placeholder="بحث عن سورة..."
+              aria-label="البحث عن سورة"
               className="w-full pr-9 pl-3 py-2 text-sm bg-(--bg-card) border border-(--border) rounded-lg focus:outline-hidden focus:border-(--accent) transition-smooth"
             />
           </div>
@@ -214,7 +219,7 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
                   </div>
                   <div className="flex items-center justify-between text-xs text-(--text-secondary)">
                     <span className="truncate">
-                      {surah.englishName} · {surah.revelationType === 'Meccan' ? (language === 'fa' ? 'مکی' : 'مكية') : (language === 'fa' ? 'مدنی' : 'مدنية')}
+                      {surah.englishName} · {surah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}
                     </span>
                     {viewCount > 0 && (
                       <span className="flex items-center gap-0.5 shrink-0 mr-2">
@@ -229,7 +234,7 @@ export default function Sidebar({ surahs, currentSurah, onSelectSurah, language,
           })}
           {filtered.length === 0 && (
             <div className="text-center py-8 text-sm text-(--text-secondary)">
-              {language === 'fa' ? 'سوره‌ای یافت نشد' : 'لا توجد نتائج'}
+              لا توجد نتائج
             </div>
           )}
         </div>

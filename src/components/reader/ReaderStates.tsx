@@ -24,7 +24,6 @@ export function ReaderLoadingState() {
 
 export function ReaderErrorState({
   error,
-  language,
   onRetry,
 }: {
   error: string;
@@ -32,9 +31,7 @@ export function ReaderErrorState({
   onRetry: () => void;
 }) {
   const message = error === 'load-surah-failed'
-    ? language === 'fa'
-      ? 'بارگذاری اطلاعات این سوره ناموفق بود.'
-      : 'تعذّر تحميل بيانات هذه السورة.'
+    ? 'تعذّر تحميل بيانات هذه السورة.'
     : error;
 
   return (
@@ -46,20 +43,20 @@ export function ReaderErrorState({
           onClick={onRetry}
           className="inline-flex items-center gap-2 rounded-lg bg-(--accent) px-4 py-2 text-sm text-white"
         >
-          {language === 'fa' ? 'تلاش دوباره' : 'إعادة المحاولة'}
+          {'إعادة المحاولة'}
         </button>
       </div>
     </div>
   );
 }
 
-export function ReaderEmptyState({ language }: { language: Language }) {
+export function ReaderEmptyState() {
   return (
     <div className="flex flex-1 items-center justify-center p-8">
       <div className="text-center">
         <BookOpen className="mx-auto mb-3 h-12 w-12 text-(--border)" />
         <p className="text-sm text-(--text-secondary)">
-          {language === 'fa' ? 'یک سوره را انتخاب کنید' : 'اختر سورة'}
+          {'اختر سورة'}
         </p>
       </div>
     </div>

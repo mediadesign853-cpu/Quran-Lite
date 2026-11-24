@@ -7,7 +7,7 @@ import BookmarksPanel from '@/components/BookmarksPanel';
 import PageViewer from '@/components/PageViewer';
 import UpdatePage from '@/components/UpdatePage';
 import type { PageTarget } from '@/lib/pageImages';
-import type { SurahMeta, SurahEdition, AppSettings } from '@/types/quran';
+import type { SurahMeta, SurahEdition, AppSettings, Theme } from '@/types/quran';
 import {
   fetchSurahList,
   fetchSurah,
@@ -42,9 +42,15 @@ export default function App() {
   const copyStatus = useCopyStatus();
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
   const pendingTargetRef = useRef<number | null>(null);
+  const searchHighlightTimerRef = useRef<number | null>(null);
   const [dismissedUpdate, setDismissedUpdate] = useState(false);
   useEffect(() => {
     purgeLegacyStorage();
+  }, []);
+  useEffect(() => () => {
+    if (searchHighlightTimerRef.current !== null) {
+      window.clearTimeout(searchHighlightTimerRef.current);
+    }
   }, []);
 
   useEffect(() => {
@@ -123,6 +129,10 @@ export default function App() {
 
   const handleSelectSurah = useCallback((n: number) => {
     pendingTargetRef.current = null;
+    if (searchHighlightTimerRef.current !== null) {
+      window.clearTimeout(searchHighlightTimerRef.current);
+      searchHighlightTimerRef.current = null;
+    }
     if (n !== currentSurah) {
       setLoading(n !== loadedSurahNumber);
       setError(null);
@@ -134,7 +144,18 @@ export default function App() {
   }, [currentSurah, loadedSurahNumber]);
 
   const handleNavigateSurah = useCallback((surahNumber: number, ayahNumber?: number, query?: string, record = true) => {
-    if (query) setSearchQuery(query);
+    if (query) {
+      setSearchQuery(query);
+      // Show the yellow search highlight briefly, then clear it from the reader.
+      // The found ayah stays marked by its row highlight.
+      if (searchHighlightTimerRef.current !== null) {
+        window.clearTimeout(searchHighlightTimerRef.current);
+      }
+      searchHighlightTimerRef.current = window.setTimeout(() => {
+        setSearchQuery('');
+        searchHighlightTimerRef.current = null;
+      }, 2000);
+    }
     if (record && query && ayahNumber !== undefined) {
       recordAyahSearch(surahNumber, ayahNumber);
       addHistory(surahNumber, ayahNumber, query);
@@ -192,12 +213,20 @@ export default function App() {
     saveSettings(next);
   }, []);
 
-  const handleToggleTheme = useCallback(() => {
-    const theme: 'light' | 'dark' = resolveTheme(settings.theme) === 'light' ? 'dark' : 'light';
+  const applyTheme = useCallback((theme: Theme) => {
     const next = { ...settings, theme };
     setSettings(next);
     saveSettings(next);
   }, [settings]);
+
+  const handleThemeChange = useCallback((theme: Theme) => {
+    applyTheme(theme);
+  }, [applyTheme]);
+
+  const handleToggleTheme = useCallback(() => {
+    const theme: 'light' | 'dark' = resolveTheme(settings.theme) === 'light' ? 'dark' : 'light';
+    applyTheme(theme);
+  }, [applyTheme, settings.theme]);
 
   // Global application shortcuts. They stay inactive while typing in an editable
   // control or while the Mushaf image / update overlay is open.
@@ -339,7 +368,7 @@ export default function App() {
         <div className="max-w-md text-center space-y-3">
           <BookOpen className="w-10 h-10 text-(--accent) mx-auto" />
           <p className="text-(--text-primary)">
-            {settings.language === 'fa' ? 'فهرست سوره‌ها بارگذاری نشد.' : 'تعذّر تحميل قائمة السور.'}
+            تعذّر تحميل قائمة السور.
           </p>
           <button onClick={() => {
             setListLoading(true);
@@ -347,7 +376,7 @@ export default function App() {
             setListRetry((value) => value + 1);
           }} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-(--accent) text-white">
             <RefreshCw className="w-4 h-4" />
-            {settings.language === 'fa' ? 'تلاش دوباره' : 'إعادة المحاولة'}
+            إعادة المحاولة
           </button>
         </div>
       </div>
@@ -360,7 +389,6 @@ export default function App() {
         surahs={surahs}
         currentSurah={currentSurah}
         onSelectSurah={handleSelectSurah}
-        language={settings.language}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -383,7 +411,7 @@ export default function App() {
         onToggleSidebar={handleToggleSidebar}
         onOpenBookmarks={handleOpenBookmarks}
         onShowPage={setViewPage}
-        onToggleTheme={handleToggleTheme}
+        onThemeChange={handleThemeChange}
         onNavigateSurah={handleNavigateSurah}
         hasPrev={displayedSurahNumber !== null && displayedSurahNumber > 1}
         hasNext={displayedSurahNumber !== null && displayedSurahNumber < 114}

@@ -7,12 +7,7 @@ type UpdatePageProps = {
   onDismiss: () => void;
 };
 
-/**
- * صفحة تحديث البرنامج.
- * - تصميم حديث وبسيط، متناسق مع ألوانinom البرنامج (متغيرات Tailwind CSS).
- * - لغة العرض فقط العربية (بقية البرنامج remain متعددة اللغات).
- * - descripción و المؤلف据 الطلب.
- */
+/** Full-screen Arabic update prompt with install and dismiss actions. */
 export default function UpdatePage({ version, onUpdate, onDismiss }: UpdatePageProps) {
   const handleUpdate = useCallback(() => {
     onUpdate();

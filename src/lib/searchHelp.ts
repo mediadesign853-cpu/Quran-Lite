@@ -7,7 +7,7 @@ import {
   type SearchIndex,
 } from '@/lib/quranData';
 
-// ── Search by reference: "2:250", "2 250", "بقره 255", or only a number ─────────────
+// ── Search by reference: "2:250", "2 250", "البقرة 255", or only a number ────────────
 
 export type ReferenceWarning =
   | { kind: 'surah'; value: number } // there is no surah with this number (1–114)
@@ -20,11 +20,11 @@ interface ReferenceLookup {
   warning?: ReferenceWarning;
 }
 
-const ARABIC_INDIC = '٠١٢٣٤٥٦٧٨٩';
-const PERSIAN = '۰۱۲۳۴۵۶۷۸۹';
+const ARABIC_INDIC = '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669';
+const PERSIAN = '\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9';
 
 function toAsciiDigits(text: string): string {
-  return text.replace(/[٠-٩۰-۹]/g, (d) => String(Math.max(ARABIC_INDIC.indexOf(d), PERSIAN.indexOf(d))));
+  return text.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (d) => String(Math.max(ARABIC_INDIC.indexOf(d), PERSIAN.indexOf(d))));
 }
 
 /**

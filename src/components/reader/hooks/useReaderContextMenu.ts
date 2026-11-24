@@ -75,12 +75,11 @@ export function useReaderContextMenu({
   const menuItems = useMemo<ContextMenuItem[]>(() => {
     if (!menu || !surahData) return [];
 
-    const isPersian = settings.language === 'fa';
     const items: ContextMenuItem[] = [];
 
     if (menu.selectedText) {
       items.push({
-        label: isPersian ? 'کپی متن انتخاب‌شده' : 'نسخ النص المحدد',
+        label: 'نسخ النص المحدد',
         hint: 'Ctrl+C',
         onSelect: () => menu.selectedPayload
           ? void copyAyahPayload(menu.selectedPayload, settings.copyReferenceStyle, settings.language)
@@ -103,11 +102,11 @@ export function useReaderContextMenu({
         : settings.copyNumberStyle;
 
       items.push({
-        label: isPersian ? `کپی آیه ${ayah}` : `نسخ الآية ${ayah}`,
+        label: `نسخ الآية ${ayah}`,
         onSelect: () => void copyAyahPayload(payload, settings.copyReferenceStyle, settings.language),
       });
       items.push({
-        label: isPersian ? `کپی آیه ${ayah} با شماره` : `نسخ الآية ${ayah} مع الرقم`,
+        label: `نسخ الآية ${ayah} مع الرقم`,
         onSelect: () => void copyAyahPayload(
           createAyahCopyPayload(
             text + numberSuffix(ayah, numberStyle),

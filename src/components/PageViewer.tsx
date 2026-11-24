@@ -20,8 +20,7 @@ interface PageViewerProps {
 }
 
 /** The page of the Mushaf as an image. The ayah that was looked up is marked in yellow for a few seconds. */
-export default function PageViewer({ target, surahs, language, onClose, onChangePage }: PageViewerProps) {
-  const fa = language === 'fa';
+export default function PageViewer({ target, surahs, onClose, onChangePage }: PageViewerProps) {
   const available = hasPageImages();
   const [zoom, setZoom] = useState(1);
   const page = target?.page ?? null;
@@ -105,7 +104,7 @@ export default function PageViewer({ target, surahs, language, onClose, onChange
               <ChevronRight className="w-4 h-4" />
             </button>
             <span className="text-sm font-medium px-1 min-w-27.5 text-center">
-              {fa ? `صفحهٔ ${page} از ${TOTAL_PAGES}` : `صفحة ${page} من ${TOTAL_PAGES}`}
+              {`صفحة ${page} من ${TOTAL_PAGES}`}
             </span>
             <button onClick={() => goTo(page + 1)} disabled={page >= TOTAL_PAGES} 
             className="p-2 rounded-lg hover:bg-(--accent)/10 disabled:opacity-30" aria-label="next">
@@ -119,7 +118,7 @@ export default function PageViewer({ target, surahs, language, onClose, onChange
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs hover:bg-(--accent)/10"
               >
                 <Highlighter className="w-4 h-4" />
-                {fa ? 'نمایش آیه' : 'إظهار الآية'}
+                {'إظهار الآية'}
               </button>
             )}
             <button onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
@@ -143,12 +142,8 @@ export default function PageViewer({ target, surahs, language, onClose, onChange
               <ImageOff className="w-8 h-8 mx-auto opacity-50" />
               <p>
                 {!available
-                  ? fa
-                    ? 'تصاویر صفحات در این نسخه موجود نیست'
-                    : 'صور الصفحات غير متوفرة في هذه النسخة'
-                  : fa
-                    ? 'تصویر این صفحه پیدا نشد'
-                    : 'لم يتم العثور على صورة هذه الصفحة'}
+                  ? 'صور الصفحات غير متوفرة في هذه النسخة'
+                  : 'لم يتم العثور على صورة هذه الصفحة'}
               </p>
             </div>
           ) : (
@@ -156,7 +151,7 @@ export default function PageViewer({ target, surahs, language, onClose, onChange
               <img
                 key={page}
                 src={pageUrl(page)}
-                alt={fa ? `صفحهٔ ${page} مصحف` : `صفحة ${page}`}
+                alt={`صفحة ${page}`}
                 onLoad={() => setLoadedImage(imageKey)}
                 onError={() => setFailedImage(imageKey)}
                 className="block w-full"

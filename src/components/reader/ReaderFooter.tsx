@@ -1,8 +1,7 @@
 ﻿import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Language } from '@/types/quran';
+import { registerReaderFooter } from '@/lib/footerHeight';
 
 interface ReaderFooterProps {
-  language: Language;
   hasPrev: boolean;
   hasNext: boolean;
   onPrev: () => void;
@@ -10,13 +9,11 @@ interface ReaderFooterProps {
 }
 
 export default function ReaderFooter({
-  language,
   hasPrev,
   hasNext,
   onPrev,
   onNext,
 }: ReaderFooterProps) {
-  const isPersian = language === 'fa';
   const buttonClass = (enabled: boolean) =>
     `flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 transition-smooth sm:gap-2 sm:px-4 sm:py-2.5 ${
       enabled
@@ -25,18 +22,18 @@ export default function ReaderFooter({
     }`;
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-(--border) bg-(--bg-primary)">
+    <footer ref={registerReaderFooter} className="fixed bottom-0 left-0 right-0 z-50 border-t border-(--border) bg-(--bg-primary)">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-4">
         <button
           type="button"
           onClick={onPrev}
           disabled={!hasPrev}
-          aria-label={isPersian ? 'رفتن به سورهٔ قبلی' : 'الانتقال إلى السورة السابقة'}
+          aria-label="الانتقال إلى السورة السابقة"
           className={buttonClass(hasPrev)}
         >
           <ChevronRight className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
           <span className="whitespace-nowrap text-xs font-medium sm:text-sm">
-            {isPersian ? 'سوره قبلی' : 'السورة السابقة'}
+            السورة السابقة
           </span>
         </button>
 
@@ -44,11 +41,11 @@ export default function ReaderFooter({
           type="button"
           onClick={onNext}
           disabled={!hasNext}
-          aria-label={isPersian ? 'رفتن به سورهٔ بعدی' : 'الانتقال إلى السورة التالية'}
+          aria-label="الانتقال إلى السورة التالية"
           className={buttonClass(hasNext)}
         >
           <span className="whitespace-nowrap text-xs font-medium sm:text-sm">
-            {isPersian ? 'سوره بعدی' : 'السورة التالية'}
+            السورة التالية
           </span>
           <ChevronLeft className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
         </button>

@@ -3,15 +3,13 @@
   FileImage,
   Keyboard,
   Menu,
-  Moon,
   Settings,
-  Sun,
 } from 'lucide-react';
 import SearchBar from '@/components/search/SearchBar';
+import ThemeSelect from '@/components/ThemeSelect';
 import { registerReaderHeader } from '@/lib/headerHeight';
-import { resolveTheme } from '@/lib/theme';
 import type { PageTarget } from '@/lib/pageImages';
-import type { AppSettings, SurahEdition, SurahMeta } from '@/types/quran';
+import type { Theme, AppSettings, SurahEdition, SurahMeta } from '@/types/quran';
 
 interface ReaderHeaderProps {
   surahMeta: SurahMeta;
@@ -22,7 +20,7 @@ interface ReaderHeaderProps {
   onToggleSidebar: () => void;
   onShowPage: (target: PageTarget) => void;
   onOpenBookmarks: () => void;
-  onToggleTheme: () => void;
+  onThemeChange: (theme: Theme) => void;
   onOpenSettings: () => void;
   onOpenKeyboardHelp: () => void;
   onNavigateSurah: (
@@ -42,13 +40,11 @@ export default function ReaderHeader({
   onToggleSidebar,
   onShowPage,
   onOpenBookmarks,
-  onToggleTheme,
+  onThemeChange,
   onOpenSettings,
   onOpenKeyboardHelp,
   onNavigateSurah,
 }: ReaderHeaderProps) {
-  const isPersian = settings.language === 'fa';
-  const isDark = resolveTheme(settings.theme) === 'dark';
   const pageNumber = surahData[0]?.ayahs?.[0]?.page;
 
   return (
@@ -59,8 +55,8 @@ export default function ReaderHeader({
             type="button"
             onClick={onToggleSidebar}
             className="tooltip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg hover:bg-(--border-light) sm:h-9 sm:w-9"
-            data-tooltip={isPersian ? 'منو' : 'القائمة'}
-            aria-label={isPersian ? 'منو' : 'القائمة'}
+            data-tooltip="القائمة"
+            aria-label="القائمة"
           >
             <Menu className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
           </button>
@@ -76,10 +72,8 @@ export default function ReaderHeader({
                 {surahMeta.name}
               </h1>
               <p className="hidden truncate whitespace-nowrap text-[9px] text-(--text-secondary) min-[380px]:block sm:text-xs">
-                {surahMeta.numberOfAyahs} {isPersian ? 'آیه' : 'آية'} -{' '}
-                {surahMeta.revelationType === 'Meccan'
-                  ? isPersian ? 'مکی' : 'مكية'
-                  : isPersian ? 'مدنی' : 'مدنية'}
+                {surahMeta.numberOfAyahs} آية -{' '}
+                {surahMeta.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}
               </p>
             </div>
           </div>
@@ -100,8 +94,8 @@ export default function ReaderHeader({
               type="button"
               onClick={() => onShowPage({ page: pageNumber })}
               className="tooltip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg hover:bg-(--border-light) sm:h-9 sm:w-9"
-              data-tooltip={isPersian ? 'صفحهٔ قرآن' : 'المصحف'}
-              aria-label={isPersian ? 'صفحهٔ قرآن' : 'المصحف'}
+              data-tooltip="المصحف"
+              aria-label="المصحف"
             >
               <FileImage className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
             </button>
@@ -111,25 +105,13 @@ export default function ReaderHeader({
             type="button"
             onClick={onOpenBookmarks}
             className="tooltip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth hover:bg-(--border-light) sm:h-9 sm:w-9"
-            data-tooltip={isPersian ? 'نشان‌ها' : 'العلامات'}
-            aria-label={isPersian ? 'نشان‌ها' : 'العلامات'}
+            data-tooltip="العلامات"
+            aria-label="العلامات"
           >
             <Bookmark className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
           </button>
 
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className="tooltip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth hover:bg-(--border-light) sm:h-9 sm:w-9"
-            data-tooltip={isPersian ? 'نمایش' : 'المظهر'}
-            aria-label={isPersian ? 'تغییر پوسته' : 'تغيير المظهر'}
-          >
-            {isDark ? (
-              <Sun className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
-            ) : (
-              <Moon className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
-            )}
-          </button>
+          <ThemeSelect theme={settings.theme} onChange={onThemeChange} compact />
 
           <button
             type="button"
@@ -145,8 +127,8 @@ export default function ReaderHeader({
             type="button"
             onClick={onOpenSettings}
             className="tooltip flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth hover:bg-(--border-light) sm:h-9 sm:w-9"
-            data-tooltip={isPersian ? 'تنظیمات' : 'الإعدادات'}
-            aria-label={isPersian ? 'تنظیمات' : 'الإعدادات'}
+            data-tooltip="الإعدادات"
+            aria-label="الإعدادات"
           >
             <Settings className="h-4 w-4 text-(--text-primary) sm:h-5 sm:w-5" />
           </button>

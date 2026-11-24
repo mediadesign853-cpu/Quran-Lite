@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 
-import type { SurahMeta, SurahEdition, AppSettings } from '@/types/quran';
+import type { SurahMeta, SurahEdition, AppSettings, Theme } from '@/types/quran';
 import AyahList from '@/components/reader/AyahList';
 import { useReaderContextMenu } from '@/components/reader/hooks/useReaderContextMenu';
 import ReaderHeader from '@/components/reader/ReaderHeader';
@@ -36,7 +36,7 @@ interface ReaderProps {
   onToggleSidebar: () => void;
   onOpenBookmarks: () => void;
   onShowPage: (target: PageTarget) => void;
-  onToggleTheme: () => void;
+  onThemeChange: (theme: Theme) => void;
   onNavigateSurah: (
     surahNumber: number,
     ayahNumber?: number,
@@ -64,7 +64,7 @@ export default function Reader({
   onToggleSidebar,
   onOpenBookmarks,
   onShowPage,
-  onToggleTheme,
+  onThemeChange,
   onNavigateSurah,
   hasPrev,
   hasNext,
@@ -619,7 +619,7 @@ export default function Reader({
         onToggleSidebar={onToggleSidebar}
         onShowPage={onShowPage}
         onOpenBookmarks={onOpenBookmarks}
-        onToggleTheme={onToggleTheme}
+        onThemeChange={onThemeChange}
         onOpenSettings={onOpenSettings}
         onOpenKeyboardHelp={() => setKeyboardHelpOpen(true)}
         onNavigateSurah={onNavigateSurah}
@@ -639,13 +639,9 @@ export default function Reader({
       )}
       {error && surahData && (
         <div className="flex items-center justify-center gap-3 px-4 py-2 text-xs text-red-600" role="alert">
-          <span>
-            {settings.language === 'fa'
-              ? 'بارگذاری سوره ناموفق'
-              : 'تعذّر تحميل السور'}
-          </span>
+          <span>تعذّر تحميل السور</span>
           <button type="button" onClick={onRetry} className="cursor-pointer underline underline-offset-2">
-            {settings.language === 'fa' ? 'تلاش دوباره' : 'إعادة المحاولة'}
+            إعادة المحاولة
           </button>
         </div>
       )}
@@ -685,21 +681,13 @@ export default function Reader({
             className="cursor-pointer inline-flex items-center mb-7 gap-2 rounded-full bg-(--accent) px-4  py-2.5 text-sm font-medium text-white shadow-lg transition-smooth hover:brightness-110  focus-visible:outline-offset-2 focus-visible:outline-(--accent)"
           >
             <Copy className="h-4 w-4" />
-            {settings.language === 'fa'
-              ? selectionCopy
-                ? activeCopy.count === 1
-                  ? 'کپی متن انتخاب‌شده'
-                  : `کپی متن انتخاب‌شده (${activeCopy.count} آیه)`
-                : activeCopy.count === 1
-                  ? 'کپی آیه انتخاب‌شده'
-                  : `کپی آیات انتخاب‌شده (${activeCopy.count})`
-              : selectionCopy
-                ? activeCopy.count === 1
-                  ? 'نسخ النص المحدد'
-                  : `نسخ النص المحدد (${activeCopy.count} آيات)`
-                : activeCopy.count === 1
-                  ? 'نسخ الآية المحددة'
-                  : `نسخ الآيات المحددة (${activeCopy.count})`}
+            {selectionCopy
+              ? activeCopy.count === 1
+                ? 'نسخ النص المحدد'
+                : `نسخ النص المحدد (${activeCopy.count} آيات)`
+              : activeCopy.count === 1
+                ? 'نسخ الآية المحددة'
+                : `نسخ الآيات المحددة (${activeCopy.count})`}
           </button>
         </div>
       )}
@@ -720,7 +708,6 @@ export default function Reader({
       )}
 
       <ReaderFooter
-        language={settings.language}
         hasPrev={hasPrev}
         hasNext={hasNext}
         onPrev={onPrev}

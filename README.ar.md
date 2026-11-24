@@ -20,8 +20,8 @@
 
 ## ⬇️ التنزيل
 
-- 💽 [تحميل نسخة التثبيت (Setup 1.0.5)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.5/Quran-Reader-Lite-Setup-1.0.5.exe)
-- ⚡ [تحميل النسخة المحمولة (Portable 1.0.5)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.5/Quran-Reader-Lite-Portable-1.0.5.exe)
+- 💽 [تحميل نسخة التثبيت (Setup 1.0.6)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.6/Quran-Reader-Lite-Setup-1.0.6.exe)
+- ⚡ [تحميل النسخة المحمولة (Portable 1.0.6)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.6/Quran-Reader-Lite-Portable-1.0.6.exe)
 
 يمكنك أيضاً زيارة [صفحة الإصدارات الرسمية](https://github.com/mediadesign853-cpu/Quran-Lite/releases/latest).
 
