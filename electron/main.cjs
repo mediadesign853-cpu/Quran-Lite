@@ -15,7 +15,7 @@ const path = require('path');
 const fs = require('fs');
 const { execFile } = require('child_process');
 const crypto = require('crypto');
-const { startAutoUpdates } = require('./auto-updater.bundle.cjs');
+const { registerUpdaterResponder, startAutoUpdates } = require('./auto-updater.bundle.cjs');
 
 // electron-builder's portable target sets PORTABLE_EXECUTABLE_DIR. Keep localStorage,
 // bookmarks, history and settings beside the portable EXE; installed builds use normal userData.
@@ -293,6 +293,10 @@ app.whenReady().then(() => {
     })
   );
   appSession.setDevicePermissionHandler(() => false);
+
+  // The styled update prompt lives in the renderer; only the trusted main frame
+  // may answer it. Every feed message is pushed from the updater to that frame.
+  registerUpdaterResponder(isTrustedRenderer);
 
   ipcMain.on('pages:available', (event) => {
     if (!isTrustedRenderer(event)) {

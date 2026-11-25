@@ -1,7 +1,7 @@
 {
   "name": "quran-reader",
   "private": true,
-  "version": "1.0.7",
+  "version": "1.0.8",
   "type": "module",
   "description": "Offline Quran Reader",
   "repository": {

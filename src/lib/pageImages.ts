@@ -13,6 +13,13 @@ declare global {
       pages: boolean;
       /** Inserts into the active Word/InDesign document; existing footnotes receive inline text. */
       insertFootnote?: (payload: { target: 'word' | 'indesign'; text: string; reference: string }) => Promise<{ ok: boolean; message?: string; code?: string }>;
+      /** Styled desktop updater events. The bridge never exposes the raw IPC event or sender. */
+      updater?: {
+        onAvailable: (listener: (payload: { version: string }) => void) => () => void;
+        onProgress: (listener: (payload: { percent: number }) => void) => () => void;
+        onError: (listener: (payload: { message: string }) => void) => () => void;
+        respond: (accepted: boolean) => Promise<boolean>;
+      };
     };
   }
 }

@@ -1,10 +1,6 @@
 'use strict';
 
-const {
-  app,
-  dialog,
-  Notification,
-} = require('electron');
+const { app, ipcMain } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -21,6 +17,9 @@ const MAX_PORTABLE_SIZE = 1024 * 1024 * 1024;
 
 const GITHUB_OWNER = 'mediadesign853-cpu';
 const GITHUB_REPO = 'Quran-Lite';
+// v1.0.0–v1.0.3 hard-coded this casing; accept both in signed manifests so a
+// future release can serve either generation without changing older clients.
+const GITHUB_LEGACY_REPO = 'quran-lite';
 const GITHUB_BASE = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
 const PORTABLE_MANIFEST_URL = `${GITHUB_BASE}/releases/latest/download/latest-portable.json`;
 const EXPECTED_APP_ID = 'com.quranreader.lite';
@@ -48,19 +47,54 @@ function getMainWindow(getWindow) {
   return window && !window.isDestroyed() ? window : null;
 }
 
-function showMessage(getWindow, options) {
+function sendToRenderer(getWindow, channel, payload) {
   const window = getMainWindow(getWindow);
-  return window ? dialog.showMessageBox(window, options) : dialog.showMessageBox(options);
+  if (!window || window.webContents.isDestroyed()) return;
+  window.webContents.send(channel, payload);
 }
 
-function notify(title, body) {
-  try {
-    if (Notification.isSupported()) {
-      new Notification({ title, body }).show();
+// The renderer owns the styled update dialog. The main process only asks it for
+// a decision and receives the answer over a validated IPC channel.
+let pendingUpdateResponse = null;
+
+function registerUpdaterResponder(isTrustedRenderer) {
+  ipcMain.handle('updater:respond', (event, accepted) => {
+    if (!isTrustedRenderer(event) || typeof accepted !== 'boolean') return false;
+    if (typeof pendingUpdateResponse !== 'function') return false;
+    const resolve = pendingUpdateResponse;
+    pendingUpdateResponse = null;
+    resolve(accepted);
+    return true;
+  });
+}
+
+function askToUpdate(getWindow, version) {
+  return new Promise((resolve) => {
+    const window = getMainWindow(getWindow);
+    if (!window) {
+      resolve(false);
+      return;
     }
-  } catch {
-    // Notifications are optional.
-  }
+    pendingUpdateResponse = resolve;
+    window.once('closed', () => {
+      if (pendingUpdateResponse === resolve) {
+        pendingUpdateResponse = null;
+        resolve(false);
+      }
+    });
+    sendToRenderer(getWindow, 'updater:available', { version });
+  });
+}
+
+function sendUpdateProgress(getWindow, percent) {
+  const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+  sendToRenderer(getWindow, 'updater:progress', { percent: clamped });
+}
+
+function sendUpdateError(getWindow, error) {
+  sendToRenderer(getWindow, 'updater:error', {
+    message: String(error?.message || error || 'خطای ناشناخته'),
+  });
 }
 
 function compareStableVersions(left, right) {
@@ -141,7 +175,8 @@ function validatePortableManifest(manifest) {
   }
 
   const expectedDownloadUrl = `${GITHUB_BASE}/releases/download/${manifest.tag}/${encodeURIComponent(manifest.fileName)}`;
-  if (manifest.downloadUrl !== expectedDownloadUrl) {
+  const legacyDownloadUrl = expectedDownloadUrl.replace(`/${GITHUB_REPO}/`, `/${GITHUB_LEGACY_REPO}/`);
+  if (manifest.downloadUrl !== expectedDownloadUrl && manifest.downloadUrl !== legacyDownloadUrl) {
     throw new Error('Portable update URL does not match the configured GitHub repository.');
   }
 }
@@ -207,7 +242,7 @@ function assertPortableDirectoryWritable(executablePath) {
   }
 }
 
-async function downloadAndVerifyPortable(manifest) {
+async function downloadAndVerifyPortable(manifest, onProgress) {
   const response = await fetch(manifest.downloadUrl, {
     method: 'GET',
     redirect: 'follow',
@@ -243,6 +278,7 @@ async function downloadAndVerifyPortable(manifest) {
         return;
       }
       hash.update(chunk);
+      if (typeof onProgress === 'function') onProgress(downloadedBytes, manifest.size);
       callback(null, chunk);
     },
   });
@@ -319,32 +355,7 @@ function launchPortableReplacement(executablePath, downloadedPath, manifest) {
   });
 }
 
-async function askToUpdate(getWindow, version) {
-  const { response } = await showMessage(getWindow, {
-    type: 'info',
-    title: 'Quran Reader Lite — به‌روزرسانی',
-    message: `نسخهٔ جدید ${version} منتشر شده است.`,
-    detail:
-      'برای دریافت و نصب نسخهٔ جدید، «به‌روزرسانی» را انتخاب کنید. پس از دریافت فایل، برنامه بسته و با نسخهٔ جدید دوباره اجرا می‌شود.\n\nيتوفر إصدار جديد. اختر «به‌روزرسانی» لتنزيله وتثبيته.',
-    buttons: ['به‌روزرسانی', 'بعداً'],
-    defaultId: 0,
-    cancelId: 1,
-    noLink: true,
-  });
-  return response === 0;
-}
-
-function showAcceptedUpdateError(getWindow, error) {
-  return showMessage(getWindow, {
-    type: 'error',
-    title: 'Quran Reader Lite — خطای به‌روزرسانی',
-    message: 'دریافت یا نصب نسخهٔ جدید انجام نشد.',
-    detail: String(error?.message || error || 'خطای ناشناخته'),
-    buttons: ['متوجه شدم'],
-    defaultId: 0,
-    noLink: true,
-  });
-}
+// UPDATE_DIALOG_BLOCK_REMOVED
 
 function startNsisUpdates(getWindow) {
   autoUpdater.autoDownload = false;
@@ -355,23 +366,17 @@ function startNsisUpdates(getWindow) {
   let declinedVersion = null;
   let promptOpen = false;
   let updateAccepted = false;
-  let errorDialogOpen = false;
   let downloadInProgress = false;
 
-  const showError = async (error) => {
-    if (!updateAccepted || errorDialogOpen) return;
-    errorDialogOpen = true;
-    try {
-      await showAcceptedUpdateError(getWindow, error);
-    } finally {
-      errorDialogOpen = false;
-      updateAccepted = false;
-      downloadInProgress = false;
-    }
+  const showError = (error) => {
+    if (!updateAccepted) return;
+    sendUpdateError(getWindow, error);
+    updateAccepted = false;
+    downloadInProgress = false;
   };
 
   autoUpdater.on('error', (error) => {
-    if (updateAccepted) void showError(error);
+    if (updateAccepted) showError(error);
     else updaterLog('warning', 'NSIS update check failed; the app will continue offline.', { message: error?.message || String(error) });
   });
 
@@ -389,10 +394,10 @@ function startNsisUpdates(getWindow) {
 
       updateAccepted = true;
       downloadInProgress = true;
-      notify('Quran Reader Lite', `در حال دریافت نسخهٔ ${version}؛ پس از پایان، برنامه خودکار راه‌اندازی مجدد می‌شود.`);
+      sendUpdateProgress(getWindow, 0);
       await autoUpdater.downloadUpdate();
     } catch (error) {
-      await showError(error);
+      showError(error);
     } finally {
       promptOpen = false;
     }
@@ -400,13 +405,14 @@ function startNsisUpdates(getWindow) {
 
   autoUpdater.on('download-progress', (progress) => {
     if (!updateAccepted) return;
-    const percent = Math.max(0, Math.min(100, Math.round(progress?.percent || 0)));
-    if (percent === 100) notify('Quran Reader Lite', 'دریافت به‌روزرسانی کامل شد؛ نصب آغاز می‌شود.');
+    sendUpdateProgress(getWindow, progress?.percent || 0);
   });
 
   autoUpdater.on('update-downloaded', () => {
     if (!updateAccepted) return;
-    setTimeout(() => autoUpdater.quitAndInstall(true, true), 400);
+    sendUpdateProgress(getWindow, 100);
+    // Let the 100% state be visible before the installer takes over.
+    setTimeout(() => autoUpdater.quitAndInstall(true, true), 900);
   });
 
   const checkForUpdates = () => {
@@ -438,6 +444,17 @@ function startPortableUpdates(getWindow) {
   let promptOpen = false;
   let updateAccepted = false;
   let updateInProgress = false;
+  let lastProgressPercent = -1;
+
+  const reportProgress = (downloadedBytes, totalBytes) => {
+    const percent = totalBytes > 0
+      ? Math.max(0, Math.min(100, Math.round((downloadedBytes / totalBytes) * 100)))
+      : 0;
+    if (percent !== lastProgressPercent) {
+      lastProgressPercent = percent;
+      sendUpdateProgress(getWindow, percent);
+    }
+  };
 
   const checkForUpdates = async () => {
     if (checkRunning || promptOpen || updateInProgress) return;
@@ -459,10 +476,12 @@ function startPortableUpdates(getWindow) {
 
       updateAccepted = true;
       updateInProgress = true;
+      lastProgressPercent = -1;
       assertPortableDirectoryWritable(executablePath);
-      notify('Quran Reader Lite', `در حال دریافت نسخهٔ ${manifest.version}؛ پس از پایان، برنامه خودکار راه‌اندازی مجدد می‌شود.`);
+      sendUpdateProgress(getWindow, 0);
 
-      downloadedPath = await downloadAndVerifyPortable(manifest);
+      downloadedPath = await downloadAndVerifyPortable(manifest, reportProgress);
+      sendUpdateProgress(getWindow, 100);
       await launchPortableReplacement(executablePath, downloadedPath, manifest);
       downloadedPath = null; // The helper now owns cleanup of this temporary file.
       updaterLog('info', 'Verified portable update was handed to the replacement helper.', {
@@ -470,16 +489,14 @@ function startPortableUpdates(getWindow) {
         to: manifest.version,
         executablePath,
       });
-      notify('Quran Reader Lite', 'دریافت و بررسی نسخهٔ جدید انجام شد؛ برنامه در حال راه‌اندازی مجدد است.');
-      setTimeout(() => app.quit(), 500);
+      // Let the completed bar be visible before the app exits.
+      setTimeout(() => app.quit(), 900);
     } catch (error) {
       if (downloadedPath) {
         try { fs.rmSync(downloadedPath, { force: true }); } catch { /* best effort */ }
       }
       updaterLog('error', 'Portable update check or installation failed.', { message: error?.message || String(error) });
-      if (updateAccepted) {
-        try { await showAcceptedUpdateError(getWindow, error); } catch { /* app may be closing */ }
-      }
+      if (updateAccepted) sendUpdateError(getWindow, error);
       updateAccepted = false;
       updateInProgress = false;
     } finally {
@@ -518,4 +535,4 @@ function startAutoUpdates(getWindow) {
   }
 }
 
-module.exports = { startAutoUpdates };
+module.exports = { registerUpdaterResponder, startAutoUpdates };

@@ -46,6 +46,7 @@ interface ReaderProps {
   hasPrev: boolean;
   hasNext: boolean;
   hasOpenOverlay: boolean;
+  downloadProgress?: number | null;
 }
 
 export default function Reader({
@@ -69,6 +70,7 @@ export default function Reader({
   hasPrev,
   hasNext,
   hasOpenOverlay,
+  downloadProgress = null,
 }: ReaderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollFrameRef = useRef<number | null>(null);
@@ -710,6 +712,7 @@ export default function Reader({
         hasNext={hasNext}
         onPrev={onPrev}
         onNext={onNext}
+        downloadProgress={downloadProgress}
       />
 
       {/* ==================== CONTEXT MENU ==================== */}

@@ -6,6 +6,7 @@ interface ReaderFooterProps {
   hasNext: boolean;
   onPrev: () => void;
   onNext: () => void;
+  downloadProgress?: number | null;
 }
 
 export default function ReaderFooter({
@@ -13,7 +14,12 @@ export default function ReaderFooter({
   hasNext,
   onPrev,
   onNext,
+  downloadProgress = null,
 }: ReaderFooterProps) {
+  const progress = typeof downloadProgress === 'number' && Number.isFinite(downloadProgress)
+    ? Math.max(0, Math.min(100, downloadProgress))
+    : null;
+
   const buttonClass = (enabled: boolean) =>
     `flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 transition-smooth sm:gap-2 sm:px-4 sm:py-2.5 ${
       enabled
@@ -23,6 +29,21 @@ export default function ReaderFooter({
 
   return (
     <footer ref={registerReaderFooter} className="fixed bottom-0 left-0 right-0 z-50 border-t border-(--border) bg-(--bg-primary)">
+      {progress !== null && (
+        <div
+          className="pointer-events-none absolute inset-x-0 -top-px h-[3px] bg-(--border-light)"
+          role="progressbar"
+          aria-label="تقدّم تنزيل التحديث"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress)}
+        >
+          <div
+            className="h-full bg-(--accent) transition-[width] duration-200 ease-linear"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-4">
         <button
           type="button"

@@ -20,6 +20,7 @@ import { getLastReadPosition, saveLastReadPosition } from '@/lib/lastRead';
 import { resolveTheme } from '@/lib/theme';
 import { useCopyStatus } from '@/app/hooks/useCopyStatus';
 import { useServiceWorkerUpdate } from '@/app/hooks/useServiceWorkerUpdate';
+import { useDesktopUpdate } from '@/app/hooks/useDesktopUpdate';
 
 export default function App() {
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
@@ -43,6 +44,10 @@ export default function App() {
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
   const pendingTargetRef = useRef<number | null>(null);
   const [dismissedUpdate, setDismissedUpdate] = useState(false);
+  const desktopUpdate = useDesktopUpdate();
+  const showDesktopPrompt = desktopUpdate.version !== null;
+  const showDesktopError = desktopUpdate.error !== null;
+  const showWebUpdate = updateAvailable && !dismissedUpdate && !showDesktopPrompt && !showDesktopError;
   useEffect(() => {
     purgeLegacyStorage();
   }, []);
@@ -394,7 +399,8 @@ export default function App() {
         onNavigateSurah={handleNavigateSurah}
         hasPrev={displayedSurahNumber !== null && displayedSurahNumber > 1}
         hasNext={displayedSurahNumber !== null && displayedSurahNumber < 114}
-        hasOpenOverlay={sidebarOpen || settingsOpen || bookmarksOpen || viewPage !== null || (updateAvailable && !dismissedUpdate)}
+        hasOpenOverlay={sidebarOpen || settingsOpen || bookmarksOpen || viewPage !== null || showWebUpdate || showDesktopPrompt || showDesktopError}
+        downloadProgress={desktopUpdate.progress}
       />
 
       <SettingsPanel settings={settings} onChange={handleSettingsChange} isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
@@ -422,7 +428,25 @@ export default function App() {
         </div>
       )}
 
-      {updateAvailable && !dismissedUpdate && (
+      {showDesktopPrompt && (
+        <UpdatePage
+          version={desktopUpdate.version ?? ''}
+          onUpdate={desktopUpdate.accept}
+          onDismiss={desktopUpdate.dismiss}
+        />
+      )}
+
+      {showDesktopError && (
+        <UpdatePage
+          version=""
+          error={desktopUpdate.error}
+          onUpdate={() => {}}
+          onDismiss={desktopUpdate.clearError}
+          onCloseError={desktopUpdate.clearError}
+        />
+      )}
+
+      {showWebUpdate && (
         <UpdatePage
           version=""
           onUpdate={() => {

@@ -124,6 +124,21 @@ test('Electron builder packages the security module imported by main.cjs', () =>
   assert.match(builderConfig, /^\s*- electron\/protocol-handlers\.cjs\s*$/mu);
 });
 
+test('updater IPC is trusted-renderer only and the bridge hides raw events', () => {
+  const mainSource = fs.readFileSync(path.join(__dirname, '..', 'electron', 'main.cjs'), 'utf8');
+  const updaterSource = fs.readFileSync(path.join(__dirname, '..', 'electron', 'auto-updater.cjs'), 'utf8');
+  const preloadSource = fs.readFileSync(path.join(__dirname, '..', 'electron', 'preload.cjs'), 'utf8');
+
+  assert.match(mainSource, /registerUpdaterResponder\(isTrustedRenderer\)/u);
+  assert.match(updaterSource, /if \(!isTrustedRenderer\(event\) \|\| typeof accepted !== 'boolean'\) return false/u);
+  assert.match(updaterSource, /window\.webContents\.send\(channel, payload\)/u);
+
+  for (const channel of ['updater:available', 'updater:progress', 'updater:error', 'updater:respond']) {
+    assert.ok(preloadSource.includes(channel), `preload bridge is missing ${channel}`);
+  }
+  assert.match(preloadSource, /const wrapped = \(_event, payload\) => listener\(payload\)/u);
+});
+
 test('TypeScript 6 config does not rely on deprecated baseUrl', () => {
   const appConfig = fs.readFileSync(path.join(__dirname, '..', 'tsconfig.app.json'), 'utf8');
   const nodeConfig = fs.readFileSync(path.join(__dirname, '..', 'tsconfig.node.json'), 'utf8');
