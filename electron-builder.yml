@@ -61,7 +61,7 @@ nsis:
 
 portable:
   artifactName: "${productName} Portable ${version}.${ext}"
-
+  useZip: true
 # Public feed: installed NSIS clients check this feed automatically; they do not
 # need a GitHub account or to open the GitHub website.
 publish:
