@@ -20,8 +20,8 @@
 
 ## ⬇️ التنزيل
 
-- 💽 [تحميل نسخة التثبيت (Setup 1.0.8)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.8/Quran-Reader-Lite-Setup-1.0.8.exe)
-- ⚡ [تحميل النسخة المحمولة (Portable 1.0.8)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.8/Quran-Reader-Lite-Portable-1.0.8.exe)
+- 💽 [تحميل نسخة التثبيت (Setup 1.0.9)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.9/Quran-Reader-Lite-Setup-1.0.9.exe)
+- ⚡ [تحميل النسخة المحمولة (Portable 1.0.9)](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.9/Quran-Reader-Lite-Portable-1.0.9.exe)
 
 إذا كنت تستخدم نسخة قديمة (من 1.0.0 إلى 1.0.3) ولم يعمل التحديث التلقائي، نزّل الإصدار الحالي يدوياً من الرابط أعلاه.
 
@@ -117,7 +117,7 @@
 | الاختصار | الوظيفة |
 |:---:|:---|
 | <span dir="ltr">S</span> | تحديد الآية أو إلغاء تحديدها |
-| <span dir="ltr">↑ / ↓</span> | التنقل بين الآيات أو النتائج أو السور |
+| <span dir="ltr">↑ / ↓</span> | التنقل بين الآيات أو النتائج أو السور، ويبدأ من الآية الأولى عند عدم وجود تركيز |
 | <span dir="ltr">Shift + ↑ / ↓</span> | تحديد الآيات المجاورة |
 | <span dir="ltr">Ctrl + Shift + ↑ / ↓</span> | توسيع التحديد |
 | <span dir="ltr">Ctrl + ← / →</span> | السورة السابقة أو التالية |

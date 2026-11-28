@@ -51,11 +51,11 @@ export function getAyahText(surah: SurahEdition[], ayahIndex: number): string {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   fontSize: 28,
-  theme: 'light',
+  theme: 'system',
   copyNumberStyle: 'plain',
   omitLastAyahNumber: true,
-  copyReferenceStyle: 'inline',
-  copyAyahBracketStyle: 'none',
+  copyReferenceStyle: 'indesignFootnote',
+  copyAyahBracketStyle: 'curly',
 };
 
 const STORAGE_KEY = 'quran-reader-settings';

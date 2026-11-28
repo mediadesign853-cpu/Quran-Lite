@@ -278,8 +278,11 @@ export default function SettingsPanel({ settings, onChange, isOpen, onClose }: S
           </Section>
 
           {/* Sources */}
-          <div className="flex justify-end
+          <div className="flex items-center justify-between gap-3
            text-xs text-(--text-secondary)">
+            <span dir="ltr" className="shrink-0 tabular-nums">
+              v{__APP_VERSION__}
+            </span>
             <a
               href="https://tanzil.net"
               target="_blank"

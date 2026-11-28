@@ -76,6 +76,12 @@ var quranPayload = __QURAN_PAYLOAD_JSON__;
 
         var insertText = String(quranPayload.text);
         var referenceText = String(quranPayload.reference);
+        /*
+         * InDesign copies the preceding character formatting at the insertion point.
+         * A trailing space separates the inserted ayah from that formatting so a later
+         * insertion does not take the style of the previous line.
+         */
+        var insertedText = /\s$/.test(insertText) ? insertText : insertText + ' ';
         var footnoteContext = quranFindFootnote(target);
 
         /*
@@ -132,13 +138,13 @@ var quranPayload = __QURAN_PAYLOAD_JSON__;
         var footnote = null;
         try {
             /* Replace a text selection, or insert at the active insertion point. */
-            target.contents = insertText;
+            target.contents = insertedText;
 
             /* Re-resolve the story after mutation; old InDesign specifiers can become stale. */
             story = doc.stories.itemByID(storyId);
             if (!story || !story.isValid) throw new Error('STORY_INVALID');
 
-            var endIndex = startIndex + insertText.length;
+            var endIndex = startIndex + insertedText.length;
             var endPoint = story.insertionPoints.item(endIndex);
             if (!endPoint || !endPoint.isValid) throw new Error('STORY_INVALID');
 
@@ -154,7 +160,7 @@ var quranPayload = __QURAN_PAYLOAD_JSON__;
             try {
                 story = doc.stories.itemByID(storyId);
                 if (story && story.isValid) {
-                    var lastInsertedIndex = startIndex + insertText.length - 1;
+                    var lastInsertedIndex = startIndex + insertedText.length - 1;
                     if (lastInsertedIndex >= startIndex) {
                         story.characters.itemByRange(startIndex, lastInsertedIndex).contents = originalContents;
                     }

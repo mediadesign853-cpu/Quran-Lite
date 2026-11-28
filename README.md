@@ -20,14 +20,14 @@ Quran text source: [Tanzil](https://tanzil.net) — CC BY 3.0.
 
 Download directly from the links below, or visit the [Releases page](https://github.com/mediadesign853-cpu/Quran-Lite/releases/latest).
 
-| 🪟 Latest release (v1.0.8) | File |
+| 🪟 Latest release (v1.0.9) | File |
 |:---:|:---:|
-| 💽 Installer (NSIS) | [📥 Quran Reader Lite Setup 1.0.8.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.8/Quran-Reader-Lite-Setup-1.0.8.exe) |
-| ⚡ Portable | [📥 Quran Reader Lite Portable 1.0.8.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.8/Quran-Reader-Lite-Portable-1.0.8.exe) |
+| 💽 Installer (NSIS) | [📥 Quran Reader Lite Setup 1.0.9.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.9/Quran-Reader-Lite-Setup-1.0.9.exe) |
+| ⚡ Portable | [📥 Quran Reader Lite Portable 1.0.9.exe](https://github.com/mediadesign853-cpu/Quran-Lite/releases/download/v1.0.9/Quran-Reader-Lite-Portable-1.0.9.exe) |
 
 The **Portable** build runs without installation. Keep the `Quran Reader Lite Data` folder next to the EXE: it stores settings, bookmarks, and history, and it must stay writable so automatic updates can replace the EXE.
 
-> ℹ️ Portable builds 1.0.0–1.0.3 cannot auto-update to this release: their signed URL check expects the old repository casing. Download 1.0.8 manually from the link above. Builds 1.0.4 and newer continue to update automatically.
+> ℹ️ Portable builds 1.0.0–1.0.3 cannot auto-update to this release: their signed URL check expects the old repository casing. Download 1.0.9 manually from the link above. Builds 1.0.4 and newer continue to update automatically.
 
 ---
 
@@ -132,16 +132,16 @@ The manifest script signs the **GitHub asset name** (`Quran-Reader-Lite-Portable
 
 The workflow `.github/workflows/release-windows.yml` runs **only when a tag starting with `v` is pushed**. Existing tags are never removed, so the update chain stays intact.
 
-1. Set the new version in `package.json` and `package-lock.json` (for example `1.0.8`).
+1. Set the new version in `package.json` and `package-lock.json` (for example `1.0.9`).
 2. Regenerate the lockfile if dependencies changed, then run `npm run check`.
 3. Commit, push `main`, and push a matching tag:
 
 ```powershell
 git add package.json package-lock.json
-git commit -m "Release v1.0.8"
+git commit -m "Release v1.0.9"
 git push origin main
-git tag v1.0.8
-git push origin v1.0.8
+git tag v1.0.9
+git push origin v1.0.9
 ```
 
 The runner installs dependencies, runs the checks, builds both packages, creates the signed Portable manifest, uploads the assets, and publishes the release only after the update metadata is present. Required repository secret: `PORTABLE_UPDATE_PRIVATE_KEY`.
@@ -161,7 +161,7 @@ The runner installs dependencies, runs the checks, builds both packages, creates
 | Shortcut | Action |
 |---|---|
 | `S` | Select / deselect the focused ayah |
-| `↑ / ↓` | Move between ayahs, results, or surahs |
+| `↑ / ↓` | Move between ayahs, results, or surahs; starts at the first ayah when nothing is focused |
 | `Shift + ↑ / ↓` | Select adjacent ayahs |
 | `Ctrl + Shift + ↑ / ↓` | Extend the selection |
 | `Ctrl + ← / →` | Previous / next surah |

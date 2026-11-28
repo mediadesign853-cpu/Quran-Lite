@@ -347,6 +347,27 @@ export default function Reader({
         return true;
       };
 
+      // With no ayah row focused, a plain Up/Down starts navigation at the first ayah.
+      // This leaves focused controls and every modified arrow shortcut unchanged.
+      const plainVerticalArrow =
+        !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey &&
+        (event.key === 'ArrowUp' || event.key === 'ArrowDown');
+      const focusedAyahRow =
+        activeElement instanceof HTMLElement &&
+        Boolean(readerRoot?.contains(activeElement)) &&
+        activeElement.matches('[data-ayah-row]');
+      if (
+        plainVerticalArrow && !focusedAyahRow &&
+        (activeElement === document.body || activeElement === document.documentElement)
+      ) {
+        event.preventDefault();
+        setSelectionCopy(null);
+        keyboardSelectionAnchorRef.current = 1;
+        setSelectedAyahs(new Set([1]));
+        focusAyah(1);
+        return;
+      }
+
       const isCommandKey = event.ctrlKey || event.metaKey;
 
       // Ctrl+Left / Ctrl+Right: move to the previous / next surah.
